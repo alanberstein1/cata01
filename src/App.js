@@ -100,14 +100,14 @@ export default function App() {
   };
 
   return (
-    <div style={{ padding: 20 }}>
+    <div className="p-5">
       {!user && (
-        <button onClick={handleSignIn} style={{ marginBottom: 10 }}>
+        <button onClick={handleSignIn} className="mb-4">
           Sign in with Google
         </button>
       )}
       {user && (
-        <div style={{ marginBottom: 10 }}>
+        <div className="mb-4">
           Logged in as: {user.displayName}
         </div>
       )}
@@ -116,7 +116,7 @@ export default function App() {
         if (selected && selected.json && canvas) {
           canvas.loadFromJSON(selected.json, canvas.renderAll.bind(canvas));
         }
-      }} style={{ marginBottom: 10 }}>
+      }} className="mb-4">
         <option value="">-- Select Template --</option>
         {templates.map((t) => (
           <option key={t.id} value={t.id}>
@@ -124,8 +124,8 @@ export default function App() {
           </option>
         ))}
       </select>
-      <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+      <div className="flex gap-2.5 mb-2.5">
+        <div className="flex flex-col gap-1.5">
           <strong>Library</strong>
           <button onClick={() => window.addLibraryObject("/objects/flower.png")}>🌸 Flower</button>
           <button onClick={() => window.addLibraryObject("/objects/car.png")}>🚗 Car</button>
@@ -139,18 +139,13 @@ export default function App() {
         2. Click 'Save as New Template' to store it in Firestore.
         3. It will appear in the dropdown above for reuse or editing.
       */}
-      <div style={{ marginTop: 20 }}>
+      <div className="mt-5">
         <input
           type="text"
           value={nameInput}
           onChange={(e) => setNameInput(e.target.value)}
           placeholder="Enter your name"
-          style={{
-            fontSize: "18px",
-            padding: "8px",
-            width: "300px",
-            marginBottom: "10px"
-          }}
+          className="text-lg p-2 w-[300px] mb-2.5"
         />
         {/* 
         <div>
@@ -161,13 +156,13 @@ export default function App() {
         */}
         <button
           onClick={handleSaveTemplate}
-          style={{ marginTop: "10px", padding: "8px", fontSize: "16px" }}
+          className="mt-2.5 px-4 py-2 text-base bg-blue-500 text-white rounded hover:bg-blue-600"
         >
           Save as New Template
         </button>
         <button
           onClick={handleExportAsImage}
-          style={{ marginTop: "10px", padding: "8px", fontSize: "16px" }}
+          className="mt-2.5 px-4 py-2 text-base bg-blue-500 text-white rounded hover:bg-blue-600"
         >
           Export as PNG
         </button>
