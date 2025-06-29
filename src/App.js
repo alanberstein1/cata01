@@ -100,9 +100,9 @@ export default function App() {
   };
 
   return (
-    <div className="p-5">
+    <div className="p-6 max-w-4xl mx-auto font-sans bg-gray-50 min-h-screen">
       {!user && (
-        <button onClick={handleSignIn} className="mb-4">
+        <button onClick={handleSignIn} className="mb-4 px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 transition">
           Sign in with Google
         </button>
       )}
@@ -116,7 +116,7 @@ export default function App() {
         if (selected && selected.json && canvas) {
           canvas.loadFromJSON(selected.json, canvas.renderAll.bind(canvas));
         }
-      }} className="mb-4">
+      }} className="mb-4 px-3 py-2 border border-gray-300 rounded shadow-sm focus:outline-none focus:ring focus:ring-blue-200">
         <option value="">-- Select Template --</option>
         {templates.map((t) => (
           <option key={t.id} value={t.id}>
@@ -125,11 +125,11 @@ export default function App() {
         ))}
       </select>
       <div className="flex gap-2.5 mb-2.5">
-        <div className="flex flex-col gap-1.5">
-          <strong>Library</strong>
-          <button onClick={() => window.addLibraryObject("/objects/flower.png")}>🌸 Flower</button>
-          <button onClick={() => window.addLibraryObject("/objects/car.png")}>🚗 Car</button>
-          <button onClick={() => window.addLibraryObject("/objects/star.png")}>⭐ Star</button>
+        <div className="flex flex-col gap-2 p-4 bg-white rounded shadow-md w-48">
+          <strong className="text-gray-700 mb-2">Library</strong>
+          <button className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200" onClick={() => window.addLibraryObject("/objects/flower.png")}>🌸 Flower</button>
+          <button className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200" onClick={() => window.addLibraryObject("/objects/car.png")}>🚗 Car</button>
+          <button className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200" onClick={() => window.addLibraryObject("/objects/star.png")}>⭐ Star</button>
         </div>
       </div>
       <canvas ref={canvasRef} />
@@ -145,7 +145,7 @@ export default function App() {
           value={nameInput}
           onChange={(e) => setNameInput(e.target.value)}
           placeholder="Enter your name"
-          className="text-lg p-2 w-[300px] mb-2.5"
+          className="text-lg p-2 w-full max-w-sm border border-gray-300 rounded mb-4 shadow-sm"
         />
         {/* 
         <div>
@@ -156,13 +156,13 @@ export default function App() {
         */}
         <button
           onClick={handleSaveTemplate}
-          className="mt-2.5 px-4 py-2 text-base bg-blue-500 text-white rounded hover:bg-blue-600"
+          className="mt-2.5 mr-3 px-4 py-2 text-base bg-green-500 text-white rounded shadow hover:bg-green-600 transition"
         >
           Save as New Template
         </button>
         <button
           onClick={handleExportAsImage}
-          className="mt-2.5 px-4 py-2 text-base bg-blue-500 text-white rounded hover:bg-blue-600"
+          className="mt-2.5 px-4 py-2 text-base bg-indigo-500 text-white rounded shadow hover:bg-indigo-600 transition"
         >
           Export as PNG
         </button>
