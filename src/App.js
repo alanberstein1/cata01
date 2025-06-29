@@ -3,6 +3,7 @@ import { fabric } from "fabric";
 import { db } from "./firebase";
 import { collection, getDocs, addDoc } from "firebase/firestore";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "firebase/auth";
+import FamilyTemplateBuilder from "./FamilyTemplateBuilder";
 
 export default function App() {
   const canvasRef = useRef(null);
@@ -11,6 +12,7 @@ export default function App() {
   const [nameInput, setNameInput] = useState("Your Name");
   const [templates, setTemplates] = useState([]);
   const [user, setUser] = useState(null);
+  const [showFamilyBuilder, setShowFamilyBuilder] = useState(false);
 
   const handleSaveTemplate = async () => {
     if (!canvas) return;
@@ -81,7 +83,6 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Update canvas text live
   useEffect(() => {
     if (nameTextObj) {
       nameTextObj.text = nameInput;
@@ -111,12 +112,16 @@ export default function App() {
           Logged in as: {user.displayName}
         </div>
       )}
-      <select onChange={(e) => {
-        const selected = templates.find((t) => t.id === e.target.value);
-        if (selected && selected.json && canvas) {
-          canvas.loadFromJSON(selected.json, canvas.renderAll.bind(canvas));
-        }
-      }} className="mb-4 px-3 py-2 border border-gray-300 rounded shadow-sm focus:outline-none focus:ring focus:ring-blue-200">
+
+      <select
+        onChange={(e) => {
+          const selected = templates.find((t) => t.id === e.target.value);
+          if (selected && selected.json && canvas) {
+            canvas.loadFromJSON(selected.json, canvas.renderAll.bind(canvas));
+          }
+        }}
+        className="mb-4 px-3 py-2 border border-gray-300 rounded shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
+      >
         <option value="">-- Select Template --</option>
         {templates.map((t) => (
           <option key={t.id} value={t.id}>
@@ -124,6 +129,7 @@ export default function App() {
           </option>
         ))}
       </select>
+
       <div className="flex gap-2.5 mb-2.5">
         <div className="flex flex-col gap-2 p-4 bg-white rounded shadow-md w-48">
           <strong className="text-gray-700 mb-2">Library</strong>
@@ -132,13 +138,20 @@ export default function App() {
           <button className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200" onClick={() => window.addLibraryObject("/objects/star.png")}>⭐ Star</button>
         </div>
       </div>
+
+      <div className="my-6">
+        <button
+          onClick={() => setShowFamilyBuilder(!showFamilyBuilder)}
+          className="mb-4 px-4 py-2 bg-purple-600 text-white rounded shadow hover:bg-purple-700 transition"
+        >
+          {showFamilyBuilder ? "Hide Family Builder" : "Open Family Builder"}
+        </button>
+
+        {showFamilyBuilder && <FamilyTemplateBuilder />}
+      </div>
+
       <canvas ref={canvasRef} />
-      {/* 
-        To add a new template:
-        1. Use the canvas tools to build your design.
-        2. Click 'Save as New Template' to store it in Firestore.
-        3. It will appear in the dropdown above for reuse or editing.
-      */}
+
       <div className="mt-5">
         <input
           type="text"
@@ -147,13 +160,6 @@ export default function App() {
           placeholder="Enter your name"
           className="text-lg p-2 w-full max-w-sm border border-gray-300 rounded mb-4 shadow-sm"
         />
-        {/* 
-        <div>
-          <button onClick={() => window.addLibraryObject("/objects/flower.png")}>Add Flower</button>
-          <button onClick={() => window.addLibraryObject("/objects/car.png")}>Add Car</button>
-          <button onClick={() => window.addLibraryObject("/objects/star.png")}>Add Star</button>
-        </div>
-        */}
         <button
           onClick={handleSaveTemplate}
           className="mt-2.5 mr-3 px-4 py-2 text-base bg-green-500 text-white rounded shadow hover:bg-green-600 transition"
