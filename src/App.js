@@ -2,7 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import FamilyBuilder from "./pages/FamilyBuilder";
-import Admin from "./pages/Admin";
+import Admin from "./pages/AdminPanel";
 
 export default function App() {
   return (
