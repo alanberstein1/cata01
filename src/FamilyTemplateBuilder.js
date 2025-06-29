@@ -1,4 +1,25 @@
-return (
+import React, { useState, useEffect } from "react";
+import { db } from "./firebase";
+import { collection, getDocs } from "firebase/firestore";
+
+const FamilyTemplateBuilder = () => {
+  const [step, setStep] = useState(1);
+  const [selectedStyle, setSelectedStyle] = useState(null);
+  const [numMembers, setNumMembers] = useState(1);
+  const [availableStyles, setAvailableStyles] = useState([]);
+
+  useEffect(() => {
+    const fetchStyles = async () => {
+      const snapshot = await getDocs(collection(db, "templateStyles"));
+      const styles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setAvailableStyles(styles);
+    };
+    fetchStyles();
+  }, []);
+
+  // ...rest of your logic (members, handleChange, saveTemplate, etc.)
+
+  return (
   <div className="p-4 border rounded shadow-sm bg-white">
     <h2 className="text-lg font-bold mb-4">Family Template Builder</h2>
 
@@ -95,4 +116,7 @@ return (
       </div>
     )}
   </div>
-);
+  );
+};
+
+export default FamilyTemplateBuilder;
