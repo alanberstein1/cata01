@@ -47,19 +47,38 @@ export default function AdminPanel() {
     setImageUrl(downloadURL);
   };
 
-  const addLibraryItem = async () => {
-    if (!selectedStyleId || !newItemName || !imageUrl) return;
-    const styleRef = doc(db, "templateStyles", selectedStyleId);
-    await updateDoc(styleRef, {
-      libraryItems: arrayUnion({
-        name: newItemName,
-        url: imageUrl
-      })
-    });
-    setNewItemName("");
-    setImageUrl("");
-    setSelectedStyleId("");
-    window.location.reload();
+  // New handleAddLibraryItem function
+  const handleAddLibraryItem = async () => {
+    if (!selectedStyleId || !newItemName || !imageUrl) {
+      alert("Please fill in all fields and upload a file.");
+      return;
+    }
+
+    try {
+      const styleDocRef = doc(db, "templateStyles", selectedStyleId);
+      const docSnap = await getDocs(collection(db, "templateStyles"));
+      const styleDoc = docSnap.docs.find(doc => doc.id === selectedStyleId);
+      if (!styleDoc) {
+        alert("Selected style not found.");
+        return;
+      }
+      const styleData = styleDoc.data();
+      const updatedLibraryItems = [
+        ...(styleData.libraryItems || []),
+        { name: newItemName, url: imageUrl }
+      ];
+
+      await updateDoc(styleDocRef, { libraryItems: updatedLibraryItems });
+
+      setNewItemName("");
+      setImageUrl("");
+      setSelectedStyleId("");
+      window.location.reload();
+      alert("Library item added successfully!");
+    } catch (error) {
+      console.error("Error adding library item:", error);
+      alert("There was an error adding the item.");
+    }
   };
 
   return (
@@ -115,7 +134,7 @@ export default function AdminPanel() {
           )}
           {/* Manual URL input removed */}
           <button
-            onClick={addLibraryItem}
+            onClick={handleAddLibraryItem}
             className="bg-green-600 text-white px-4 py-2 rounded"
           >
             Add Item
