@@ -1,36 +1,66 @@
 import React, { useState } from "react";
 
 export default function FamilyTemplateBuilder({ libraryItems = [] }) {
-  const [selectedItem, setSelectedItem] = useState("");
+  const [members, setMembers] = useState([{ name: "", libraryItem: "" }]);
+
+  const handleChange = (e, index, field) => {
+    const newMembers = [...members];
+    newMembers[index][field] = e.target.value;
+    setMembers(newMembers);
+  };
+
+  const addMember = () => {
+    setMembers([...members, { name: "", libraryItem: "" }]);
+  };
+
+  const saveTemplate = () => {
+    console.log("Saving family template:", members);
+    // Save to Firebase or whatever you need here
+  };
 
   return (
-    <div className="p-4">
-      <label className="block mb-2 text-sm font-medium text-gray-700">
-        Select Library Item
-      </label>
+    <div className="p-4 border rounded shadow-sm bg-white">
+      <h2 className="text-lg font-bold mb-4">Family Template Builder</h2>
 
-      <select
-        value={selectedItem}
-        onChange={(e) => setSelectedItem(e.target.value)}
-        className="block w-full p-2 border border-gray-300 rounded"
-      >
-        <option value="">-- Choose an item --</option>
-        {libraryItems.map((item) => (
-          <option key={item.url} value={item.url}>
-            {item.name}
-          </option>
-        ))}
-      </select>
-
-      {selectedItem && (
-        <div className="mt-4">
-          <img
-            src={selectedItem}
-            alt="Selected Preview"
-            className="w-24 h-24 object-contain border"
+      {members.map((member, index) => (
+        <div key={index} className="flex flex-col md:flex-row gap-2 mb-4">
+          <input
+            type="text"
+            placeholder="Name"
+            value={member.name}
+            onChange={(e) => handleChange(e, index, "name")}
+            className="p-2 border border-gray-300 rounded w-full"
           />
+
+          <select
+            value={member.libraryItem}
+            onChange={(e) => handleChange(e, index, "libraryItem")}
+            className="p-2 border border-gray-300 rounded w-full"
+          >
+            <option value="">-- Select Library Item --</option>
+            {libraryItems.map((item) => (
+              <option key={item.url} value={item.url}>
+                {item.name}
+              </option>
+            ))}
+          </select>
         </div>
-      )}
+      ))}
+
+      <div className="flex gap-2">
+        <button
+          onClick={addMember}
+          className="bg-blue-500 text-white px-4 py-2 rounded"
+        >
+          Add Member
+        </button>
+        <button
+          onClick={saveTemplate}
+          className="bg-green-500 text-white px-4 py-2 rounded"
+        >
+          Save Template
+        </button>
+      </div>
     </div>
   );
 }
