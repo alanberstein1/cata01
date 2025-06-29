@@ -1,107 +1,104 @@
-import React, { useState, useEffect } from "react";
-import { collection, addDoc, getDocs, deleteDoc, doc } from "firebase/firestore";
+import React, { useEffect, useState } from "react";
 import { db } from "./firebase";
+import {
+  collection, addDoc, getDocs, updateDoc, doc, arrayUnion
+} from "firebase/firestore";
 
 export default function AdminPanel() {
-  const [templateStyles, setTemplateStyles] = useState([]);
-  const [newStyleName, setNewStyleName] = useState("");
-  const [newItems, setNewItems] = useState([{ name: "", url: "" }]);
+  const [styles, setStyles] = useState([]);
+  const [newStyle, setNewStyle] = useState("");
+  const [newItem, setNewItem] = useState({ name: "", url: "", styleId: "" });
 
   useEffect(() => {
     const fetchStyles = async () => {
-      const snapshot = await getDocs(collection(db, "templateStyles"));
-      const styles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setTemplateStyles(styles);
+      const colRef = collection(db, "templateStyles");
+      const snapshot = await getDocs(colRef);
+      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setStyles(list);
     };
     fetchStyles();
   }, []);
 
-  const handleAddItem = () => {
-    setNewItems([...newItems, { name: "", url: "" }]);
-  };
-
-  const handleItemChange = (index, field, value) => {
-    const items = [...newItems];
-    items[index][field] = value;
-    setNewItems(items);
-  };
-
-  const handleCreateStyle = async () => {
-    if (!newStyleName) return;
+  const addStyle = async () => {
+    if (!newStyle) return;
     await addDoc(collection(db, "templateStyles"), {
-      name: newStyleName,
-      libraryItems: newItems.filter(item => item.name && item.url),
+      name: newStyle,
+      libraryItems: []
     });
-    setNewStyleName("");
-    setNewItems([{ name: "", url: "" }]);
-    const updated = await getDocs(collection(db, "templateStyles"));
-    setTemplateStyles(updated.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    setNewStyle("");
+    window.location.reload();
   };
 
-  const handleDeleteStyle = async (id) => {
-    await deleteDoc(doc(db, "templateStyles", id));
-    setTemplateStyles(templateStyles.filter(style => style.id !== id));
+  const addLibraryItem = async () => {
+    if (!newItem.styleId || !newItem.name || !newItem.url) return;
+
+    const styleRef = doc(db, "templateStyles", newItem.styleId);
+    await updateDoc(styleRef, {
+      libraryItems: arrayUnion({
+        name: newItem.name,
+        url: newItem.url
+      })
+    });
+    setNewItem({ name: "", url: "", styleId: "" });
+    window.location.reload();
   };
 
   return (
-    <div className="p-6 max-w-3xl mx-auto bg-white rounded shadow">
-      <h2 className="text-2xl font-bold mb-6">Admin: Manage Template Styles</h2>
+    <div className="p-6 max-w-2xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">Admin Panel</h1>
 
       <div className="mb-6">
+        <h2 className="text-lg font-semibold">Add Template Style</h2>
         <input
-          type="text"
-          value={newStyleName}
-          onChange={(e) => setNewStyleName(e.target.value)}
-          placeholder="Template Style Name"
-          className="p-2 border rounded w-full mb-4"
+          className="border p-2 w-full mb-2"
+          placeholder="e.g. Cars, Tools"
+          value={newStyle}
+          onChange={(e) => setNewStyle(e.target.value)}
         />
-
-        {newItems.map((item, idx) => (
-          <div key={idx} className="flex gap-2 mb-2">
-            <input
-              type="text"
-              placeholder="Icon Name"
-              value={item.name}
-              onChange={(e) => handleItemChange(idx, "name", e.target.value)}
-              className="p-2 border rounded w-full"
-            />
-            <input
-              type="text"
-              placeholder="Image URL"
-              value={item.url}
-              onChange={(e) => handleItemChange(idx, "url", e.target.value)}
-              className="p-2 border rounded w-full"
-            />
-          </div>
-        ))}
-        <button
-          onClick={handleAddItem}
-          className="bg-gray-300 px-4 py-2 rounded mr-2"
-        >
-          Add Library Item
-        </button>
-        <button
-          onClick={handleCreateStyle}
-          className="bg-green-600 text-white px-4 py-2 rounded"
-        >
-          Create Template Style
+        <button onClick={addStyle} className="bg-blue-600 text-white px-4 py-2 rounded">
+          Add Style
         </button>
       </div>
 
-      <h3 className="text-xl font-semibold mb-4">Existing Styles</h3>
-      <ul>
-        {templateStyles.map((style) => (
-          <li key={style.id} className="flex justify-between items-center border-b py-2">
-            <span>{style.name}</span>
-            <button
-              onClick={() => handleDeleteStyle(style.id)}
-              className="text-red-500 hover:underline"
-            >
-              Delete
-            </button>
-          </li>
-        ))}
-      </ul>
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold">Add Library Item</h2>
+        <select
+          className="border p-2 w-full mb-2"
+          value={newItem.styleId}
+          onChange={(e) => setNewItem({ ...newItem, styleId: e.target.value })}
+        >
+          <option value="">-- Select Style --</option>
+          {styles.map(s => (
+            <option key={s.id} value={s.id}>{s.name}</option>
+          ))}
+        </select>
+        <input
+          className="border p-2 w-full mb-2"
+          placeholder="e.g. 🔧 Wrench"
+          value={newItem.name}
+          onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+        />
+        <input
+          className="border p-2 w-full mb-2"
+          placeholder="/objects/wrench.png"
+          value={newItem.url}
+          onChange={(e) => setNewItem({ ...newItem, url: e.target.value })}
+        />
+        <button onClick={addLibraryItem} className="bg-green-600 text-white px-4 py-2 rounded">
+          Add Item
+        </button>
+      </div>
+
+      <div>
+        <h2 className="text-lg font-semibold">Current Styles</h2>
+        <ul className="list-disc pl-5">
+          {styles.map(style => (
+            <li key={style.id}>
+              {style.name} ({style.libraryItems?.length || 0} items)
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
