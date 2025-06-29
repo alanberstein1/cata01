@@ -41,9 +41,7 @@ export default function App() {
         Start Family Template
       </button>
 
-      {showFamilyBuilder && (
-        <FamilyTemplateBuilder libraryItems={libraryItems} />
-      )}
+      {showFamilyBuilder && <FamilyTemplateBuilder />}
     </div>
   );
 }
