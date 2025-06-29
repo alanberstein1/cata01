@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { db } from "../firebase";
 import {
-  collection, addDoc, getDocs, updateDoc, doc, arrayUnion
+  collection, addDoc, getDocs, updateDoc, doc
 } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
@@ -9,10 +9,9 @@ export default function AdminPanel() {
   const [styles, setStyles] = useState([]);
   const [newStyle, setNewStyle] = useState("");
   const [templateStyles, setTemplateStyles] = useState([]);
-  const [selectedStyleId, setSelectedStyleId] = useState("");
+  const [selectedStyle, setSelectedStyle] = useState("");
   const [newItemName, setNewItemName] = useState("");
-  // const [newItemUrl, setNewItemUrl] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [file, setFile] = useState(null);
 
   useEffect(() => {
     const fetchStyles = async () => {
@@ -35,49 +34,42 @@ export default function AdminPanel() {
     window.location.reload();
   };
 
-  // Firebase Storage image upload handler
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const storage = getStorage();
-    const storageRef = ref(storage, `objects/${file.name}`);
-    await uploadBytes(storageRef, file);
-    const downloadURL = await getDownloadURL(storageRef);
-    setImageUrl(downloadURL);
-  };
-
-  // New handleAddLibraryItem function
-  const handleAddLibraryItem = async () => {
-    if (!selectedStyleId || !newItemName || !imageUrl) {
-      alert("Please fill in all fields and upload a file.");
+  const handleAddItem = async () => {
+    if (!selectedStyle || !newItemName || !file) {
+      alert("Please fill all fields and select an image.");
       return;
     }
 
+    const storage = getStorage();
+    const storageRef = ref(storage, `objects/${file.name}`);
     try {
-      const styleDocRef = doc(db, "templateStyles", selectedStyleId);
-      const docSnap = await getDocs(collection(db, "templateStyles"));
-      const styleDoc = docSnap.docs.find(doc => doc.id === selectedStyleId);
-      if (!styleDoc) {
-        alert("Selected style not found.");
-        return;
-      }
-      const styleData = styleDoc.data();
-      const updatedLibraryItems = [
-        ...(styleData.libraryItems || []),
-        { name: newItemName, url: imageUrl }
-      ];
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
 
-      await updateDoc(styleDocRef, { libraryItems: updatedLibraryItems });
+      const updatedStyles = styles.map(style => {
+        if (style.id === selectedStyle) {
+          return {
+            ...style,
+            items: [
+              ...(style.items || []),
+              { name: newItemName, url: downloadURL }
+            ]
+          };
+        }
+        return style;
+      });
 
+      const styleDoc = doc(db, "templateStyles", selectedStyle);
+      await updateDoc(styleDoc, {
+        libraryItems: updatedStyles.find(s => s.id === selectedStyle).items
+      });
+
+      setStyles(updatedStyles);
       setNewItemName("");
-      setImageUrl("");
-      setSelectedStyleId("");
-      window.location.reload();
-      alert("Library item added successfully!");
+      setFile(null);
     } catch (error) {
-      console.error("Error adding library item:", error);
-      alert("There was an error adding the item.");
+      console.error("Error uploading item:", error);
+      alert("Error uploading item");
     }
   };
 
@@ -98,15 +90,16 @@ export default function AdminPanel() {
         </button>
       </div>
 
-      {/* Updated Add Library Item section with Firebase Storage image upload */}
+      {/* Add Library Item section with file upload */}
       <div className="mb-6">
         <div>
           <label className="block mb-2 font-medium">Add Library Item</label>
           <select
             className="p-2 border rounded w-full mb-2"
-            value={selectedStyleId}
-            onChange={(e) => setSelectedStyleId(e.target.value)}
+            value={selectedStyle}
+            onChange={e => setSelectedStyle(e.target.value)}
           >
+            <option value="">-- Select a Style --</option>
             {templateStyles.map((style) => (
               <option key={style.id} value={style.id}>
                 {style.name}
@@ -123,18 +116,11 @@ export default function AdminPanel() {
           <input
             type="file"
             accept="image/*"
-            onChange={handleFileUpload}
+            onChange={e => setFile(e.target.files[0])}
             className="mb-2"
           />
-          {/* Optionally show a preview */}
-          {imageUrl && (
-            <div className="mb-2">
-              <img src={imageUrl} alt="Preview" className="h-16" />
-            </div>
-          )}
-          {/* Manual URL input removed */}
           <button
-            onClick={handleAddLibraryItem}
+            onClick={handleAddItem}
             className="bg-green-600 text-white px-4 py-2 rounded"
           >
             Add Item
