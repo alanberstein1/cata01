@@ -9,170 +9,42 @@ export default function App() {
   const canvasRef = useRef(null);
   const [canvas, setCanvas] = useState(null);
   const [nameTextObj, setNameTextObj] = useState(null);
-  const [nameInput, setNameInput] = useState("Your Name");
+  const [name, setName] = useState("");
   const [templates, setTemplates] = useState([]);
-  const [user, setUser] = useState(null);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [showFamilyBuilder, setShowFamilyBuilder] = useState(false);
 
-  const handleSaveTemplate = async () => {
-    if (!canvas) return;
-    const json = canvas.toJSON();
-    const name = prompt("Enter a name for this template:");
-    if (!name) return;
-
-    await addDoc(collection(db, "templates"), {
-      name,
-      json
-    });
-
-    alert("Template saved successfully!");
-  };
-
-  const handleExportAsImage = () => {
-    if (!canvas) return;
-    const dataURL = canvas.toDataURL({ format: "png" });
-    const link = document.createElement("a");
-    link.download = "canvas-export.png";
-    link.href = dataURL;
-    link.click();
-  };
-
   useEffect(() => {
-    const newCanvas = new fabric.Canvas(canvasRef.current, {
-      width: 800,
-      height: 600,
-      backgroundColor: "#fff"
-    });
-
-    // Add editable text
-    const text = new fabric.Textbox(nameInput, {
-      left: 200,
-      top: 100,
-      width: 300,
-      fontSize: 30
-    });
-
-    newCanvas.add(text);
-    setCanvas(newCanvas);
-    setNameTextObj(text);
-
-    // Setup image adder function
-    window.addLibraryObject = (url) => {
-      fabric.Image.fromURL(url, (img) => {
-        img.left = 400;
-        img.top = 200;
-        img.scaleToWidth(100);
-        newCanvas.add(img);
-      });
+    const fetchTemplates = async () => {
+      const templatesCol = collection(db, "templates");
+      const templateSnapshot = await getDocs(templatesCol);
+      const templateList = templateSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setTemplates(templateList);
     };
 
-    const loadTemplates = async () => {
-      const querySnapshot = await getDocs(collection(db, "templates"));
-      const loaded = [];
-      querySnapshot.forEach((doc) => {
-        loaded.push({ id: doc.id, ...doc.data() });
-      });
-      setTemplates(loaded);
-    };
-    loadTemplates();
-
-    const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return () => unsubscribe();
+    fetchTemplates();
   }, []);
 
-  useEffect(() => {
-    if (nameTextObj) {
-      nameTextObj.text = nameInput;
-      canvas.renderAll();
-    }
-  }, [nameInput, nameTextObj, canvas]);
-
-  const handleSignIn = async () => {
-    const provider = new GoogleAuthProvider();
-    const auth = getAuth();
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (err) {
-      console.error("Auth error:", err);
-    }
-  };
+  const libraryItems = [
+    { name: "Flower", url: "/objects/flower.png" },
+    { name: "Car", url: "/objects/car.png" },
+    { name: "Star", url: "/objects/star.png" }
+  ];
 
   return (
-    <div className="p-6 max-w-4xl mx-auto font-sans bg-gray-50 min-h-screen">
-      {!user && (
-        <button onClick={handleSignIn} className="mb-4 px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 transition">
-          Sign in with Google
-        </button>
-      )}
-      {user && (
-        <div className="mb-4">
-          Logged in as: {user.displayName}
-        </div>
-      )}
+    <div className="App">
+      <h1 className="text-xl font-bold mb-4">Custom Template App</h1>
 
-      <select
-        onChange={(e) => {
-          const selected = templates.find((t) => t.id === e.target.value);
-          if (selected && selected.json && canvas) {
-            canvas.loadFromJSON(selected.json, canvas.renderAll.bind(canvas));
-          }
-        }}
-        className="mb-4 px-3 py-2 border border-gray-300 rounded shadow-sm focus:outline-none focus:ring focus:ring-blue-200"
-      >
-        <option value="">-- Select Template --</option>
-        {templates.map((t) => (
-          <option key={t.id} value={t.id}>
-            {t.name}
-          </option>
-        ))}
-      </select>
+      {/* Other parts of your UI */}
 
-      <div className="flex gap-2.5 mb-2.5">
-        <div className="flex flex-col gap-2 p-4 bg-white rounded shadow-md w-48">
-          <strong className="text-gray-700 mb-2">Library</strong>
-          <button className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200" onClick={() => window.addLibraryObject("/objects/flower.png")}>🌸 Flower</button>
-          <button className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200" onClick={() => window.addLibraryObject("/objects/car.png")}>🚗 Car</button>
-          <button className="px-3 py-2 bg-gray-100 rounded hover:bg-gray-200" onClick={() => window.addLibraryObject("/objects/star.png")}>⭐ Star</button>
-        </div>
-      </div>
-
-      <div className="my-6">
-        <button
-          onClick={() => setShowFamilyBuilder(!showFamilyBuilder)}
-          className="mb-4 px-4 py-2 bg-purple-600 text-white rounded shadow hover:bg-purple-700 transition"
-        >
-          {showFamilyBuilder ? "Hide Family Builder" : "Open Family Builder"}
-        </button>
-
-        {showFamilyBuilder && <FamilyTemplateBuilder />}
-      </div>
-
-      <canvas ref={canvasRef} />
-
-      <div className="mt-5">
-        <input
-          type="text"
-          value={nameInput}
-          onChange={(e) => setNameInput(e.target.value)}
-          placeholder="Enter your name"
-          className="text-lg p-2 w-full max-w-sm border border-gray-300 rounded mb-4 shadow-sm"
+      {showFamilyBuilder && (
+        <FamilyTemplateBuilder
+          libraryItems={libraryItems}
         />
-        <button
-          onClick={handleSaveTemplate}
-          className="mt-2.5 mr-3 px-4 py-2 text-base bg-green-500 text-white rounded shadow hover:bg-green-600 transition"
-        >
-          Save as New Template
-        </button>
-        <button
-          onClick={handleExportAsImage}
-          className="mt-2.5 px-4 py-2 text-base bg-indigo-500 text-white rounded shadow hover:bg-indigo-600 transition"
-        >
-          Export as PNG
-        </button>
-      </div>
+      )}
     </div>
   );
 }
