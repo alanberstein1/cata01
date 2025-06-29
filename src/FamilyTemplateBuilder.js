@@ -15,7 +15,7 @@ export default function FamilyTemplateBuilder({ libraryItems = [] }) {
 
   const saveTemplate = () => {
     console.log("Saving family template:", members);
-    // Save to Firebase or whatever you need here
+    // Add your Firebase saving logic here
   };
 
   return (
@@ -38,11 +38,15 @@ export default function FamilyTemplateBuilder({ libraryItems = [] }) {
             className="p-2 border border-gray-300 rounded w-full"
           >
             <option value="">-- Select Library Item --</option>
-            {libraryItems.map((item) => (
-              <option key={item.url} value={item.url}>
-                {item.name}
-              </option>
-            ))}
+            {Array.isArray(libraryItems) && libraryItems.length > 0 ? (
+              libraryItems.map((item) => (
+                <option key={item.url} value={item.url}>
+                  {item.name}
+                </option>
+              ))
+            ) : (
+              <option disabled>No library items available</option>
+            )}
           </select>
         </div>
       ))}
@@ -56,7 +60,7 @@ export default function FamilyTemplateBuilder({ libraryItems = [] }) {
         </button>
         <button
           onClick={saveTemplate}
-          className="bg-green-500 text-white px-4 py-2 rounded"
+          className="bg-green-600 text-white px-4 py-2 rounded"
         >
           Save Template
         </button>
