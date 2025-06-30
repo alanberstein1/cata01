@@ -2,41 +2,36 @@ import React, { useEffect, useState } from "react";
 import { db } from "../firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "../firebase";
-import { collection, addDoc, getDocs, doc } from "firebase/firestore";
+import { collection, addDoc, getDocs, doc, deleteDoc } from "firebase/firestore";
 
 export default function AdminPanel() {
   const [styles, setStyles] = useState([]);
-  const [newStyle, setNewStyle] = useState("");
+  const [newStyleName, setNewStyleName] = useState("");
   const [selectedStyle, setSelectedStyle] = useState("");
   const [itemName, setItemName] = useState("");
   const [itemFile, setItemFile] = useState(null);
 
   // Fetch styles from Firestore and update styles state
+  const fetchStyles = async () => {
+    const snapshot = await getDocs(collection(db, "templateStyles"));
+    setStyles(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+  };
+
   useEffect(() => {
-    const fetchStyles = async () => {
-      const stylesCol = collection(db, "templateStyles");
-      const stylesSnapshot = await getDocs(stylesCol);
-      const styleList = stylesSnapshot.docs.map(doc => doc.data().name);
-      setStyles(styleList);
-    };
     fetchStyles();
+    // eslint-disable-next-line
   }, []);
 
-  const addStyle = async () => {
-    if (!newStyle) return;
-    try {
-      await addDoc(collection(db, "templateStyles"), {
-        name: newStyle
-      });
-      setNewStyle("");
-      // Refetch styles
-      const stylesCol = collection(db, "templateStyles");
-      const stylesSnapshot = await getDocs(stylesCol);
-      const styleList = stylesSnapshot.docs.map(doc => doc.data().name);
-      setStyles(styleList);
-    } catch (e) {
-      alert("Failed to add style: " + e.message);
-    }
+  const handleAddStyle = async () => {
+    if (!newStyleName) return;
+    await addDoc(collection(db, "templateStyles"), { name: newStyleName, libraryItems: [] });
+    setNewStyleName("");
+    fetchStyles();
+  };
+
+  const handleDeleteStyle = async (styleId) => {
+    await deleteDoc(doc(db, "templateStyles", styleId));
+    fetchStyles();
   };
 
   // Handle file input change
@@ -53,10 +48,8 @@ export default function AdminPanel() {
     await uploadBytes(storageRef, itemFile);
     const imageUrl = await getDownloadURL(storageRef);
 
-    // Find the style doc by name
-    const stylesCol = collection(db, "templateStyles");
-    const styleDocs = await getDocs(stylesCol);
-    const styleDoc = styleDocs.docs.find(doc => doc.data().name === selectedStyle);
+    // Find the style doc by id
+    const styleDoc = styles.find(style => style.id === selectedStyle);
 
     if (styleDoc) {
       const itemsCol = collection(doc(db, "templateStyles", styleDoc.id), "items");
@@ -74,15 +67,32 @@ export default function AdminPanel() {
     <div className="p-6 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Admin Panel</h1>
 
+      {/* Add Template Style Section */}
       <div className="mb-6">
-        <h2 className="text-lg font-semibold">Add Template Style</h2>
+        <h3 className="text-lg font-semibold mb-2">Current Template Styles</h3>
+        <ul className="mb-4">
+          {styles.map((style) => (
+            <li key={style.id} className="flex justify-between items-center mb-2">
+              <span>{style.name}</span>
+              <button
+                onClick={() => handleDeleteStyle(style.id)}
+                className="text-sm px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                Delete
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        <label className="block mb-2 font-medium">Add Template Style</label>
         <input
-          className="border p-2 w-full mb-2"
+          type="text"
           placeholder="e.g. Cars, Tools"
-          value={newStyle}
-          onChange={(e) => setNewStyle(e.target.value)}
+          value={newStyleName}
+          onChange={(e) => setNewStyleName(e.target.value)}
+          className="p-2 border rounded w-full mb-2"
         />
-        <button onClick={addStyle} className="bg-blue-600 text-white px-4 py-2 rounded">
+        <button onClick={handleAddStyle} className="bg-blue-600 text-white px-4 py-2 rounded">
           Add Style
         </button>
       </div>
@@ -97,7 +107,7 @@ export default function AdminPanel() {
           >
             <option value="">-- Select Style --</option>
             {styles.map(style => (
-              <option key={style} value={style}>{style}</option>
+              <option key={style.id} value={style.id}>{style.name}</option>
             ))}
           </select>
           <input
@@ -125,15 +135,6 @@ export default function AdminPanel() {
             Add Item
           </button>
         </div>
-      </div>
-
-      <div>
-        <h2 className="text-lg font-semibold">Current Styles</h2>
-        <ul className="list-disc pl-5">
-          {styles.map(style => (
-            <li key={style}>{style}</li>
-          ))}
-        </ul>
       </div>
     </div>
   );
