@@ -428,159 +428,239 @@ export default function AdminPanel() {
         <div className="overflow-x-auto">
           <table className="min-w-full border text-sm">
             <colgroup>
-              <col style={{ width: "50px", maxWidth: "60px", flexBasis: "50px" }} /> {/* Image column: reduced width */}
-              <col style={{ width: "180px" }} />
-              <col style={{ width: "240px" }} />
+              <col style={{ width: "72px" }} /> {/* Image column */}
+              <col style={{ width: "220px" }} />
+              <col style={{ width: "320px" }} />
               <col />
-              <col style={{ width: "130px" }} /> {/* Slightly increased for full action buttons */}
+              <col style={{ width: "120px" }} />
             </colgroup>
             <thead>
               <tr className="bg-gray-100">
-                <th className="border px-1 py-1" style={{ minWidth: 44, width: 50 }}>Image</th>
+                <th className="border px-1 py-1" style={{ minWidth: 56 }}>Image</th>
                 <th className="border px-2 py-1">Short Description</th>
                 <th className="border px-2 py-1">Long Description</th>
                 <th className="border px-2 py-1">Template Styles</th>
-                <th className="border px-2 py-1" style={{ minWidth: 120 }}>Actions</th>
+                <th className="border px-2 py-1">Actions</th>
               </tr>
             </thead>
             <tbody>
               {libraryItems.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50">
-                  <td className="border px-1 py-1 align-top" style={{ width: 50, maxWidth: 60 }}>
+                <tr key={item.id} className="hover:bg-gray-50 editable-row">
+                  {/* IMAGE CELL */}
+                  <td className="border px-1 py-1 align-top">
                     {editingItemId === item.id ? (
-                      <div className="flex flex-col items-center" style={{ minWidth: 44 }}>
+                      <div className="flex flex-col items-center" style={{ minWidth: 56 }}>
+                        <div className="flex items-center mb-1">
+                          {currentImageURL && (
+                            <img src={currentImageURL} alt="Current"
+                              className="editable-row-img"
+                            />
+                          )}
+                          <input
+                            type="file"
+                            onChange={handleFileChange}
+                            className="ml-2 editable-row-file"
+                            style={{ marginLeft: currentImageURL ? 12 : 0 }}
+                          />
+                        </div>
                         {currentImageURL && (
-                          <div className="mb-1">
-                            <img src={currentImageURL} alt="Current" className="w-7 h-7 object-cover rounded border" />
-                            <div className="text-xs text-gray-500">Current</div>
+                          <div className="text-xs text-gray-500 mt-1" style={{ fontSize: "11px" }}>
+                            Current
                           </div>
                         )}
-                        <input
-                          type="file"
-                          onChange={handleFileChange}
-                          style={{
-                            width: "48px",
-                            minWidth: "48px",
-                            fontSize: "0.7rem",
-                            marginLeft: "-2px"
-                          }}
-                        />
                       </div>
                     ) : (
-                      <img
-                        src={item.imageUrl}
-                        alt="Library"
-                        className="w-7 h-7 object-cover rounded border"
-                        style={{ minWidth: "28px", maxWidth: "48px" }}
-                      />
+                      <div className="flex items-center justify-center" style={{ minHeight: 40, minWidth: 40 }}>
+                        <img
+                          src={item.imageUrl}
+                          alt="Library"
+                          className="editable-row-img"
+                        />
+                      </div>
                     )}
                   </td>
-                  <td className="border px-2 py-1 align-top">
+                  {/* SHORT DESCRIPTION CELL */}
+                  <td className="border px-2 py-1 align-top" style={{ verticalAlign: "top" }}>
                     {editingItemId === item.id ? (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                        <div>
-                          <span className="font-semibold mr-1">(EN)</span>
-                          <textarea
-                            style={{ minWidth: "140px", minHeight: "32px" }}
+                      <div className="flex flex-col gap-2">
+                        <div className="flex flex-col mb-1">
+                          <label className="editable-row-label mb-1" htmlFor={`short-en-${item.id}`}>Short Description (EN)</label>
+                          <input
+                            id={`short-en-${item.id}`}
+                            className="editable-row-input"
+                            style={{ maxWidth: 300, minHeight: 28 }}
                             value={shortDescEN}
                             onChange={(e) => setShortDescEN(e.target.value)}
                           />
                         </div>
-                        <div>
-                          <span className="font-semibold mr-1">(ES)</span>
-                          <textarea
-                            style={{ minWidth: "140px", minHeight: "32px" }}
+                        <div className="flex flex-col">
+                          <label className="editable-row-label mb-1" htmlFor={`short-es-${item.id}`}>Short Description (ES)</label>
+                          <input
+                            id={`short-es-${item.id}`}
+                            className="editable-row-input"
+                            style={{ maxWidth: 300, minHeight: 28 }}
                             value={shortDescES}
                             onChange={(e) => setShortDescES(e.target.value)}
                           />
                         </div>
                       </div>
                     ) : (
-                      `${item.shortDescription?.en || ""} / ${item.shortDescription?.es || ""}`
+                      <div className="whitespace-pre-line break-words" style={{ maxWidth: 300 }}>
+                        <span className="block font-semibold text-xs text-gray-500 mb-0.5">EN:</span>
+                        <span>{item.shortDescription?.en || ""}</span>
+                        <span className="block font-semibold text-xs text-gray-500 mt-1 mb-0.5">ES:</span>
+                        <span>{item.shortDescription?.es || ""}</span>
+                      </div>
                     )}
                   </td>
-                  <td className="border px-2 py-1 align-top max-w-xs break-words">
+                  {/* LONG DESCRIPTION CELL */}
+                  <td className="border px-2 py-1 align-top" style={{ verticalAlign: "top" }}>
                     {editingItemId === item.id ? (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                        <div>
-                          <span className="font-semibold mr-1">(EN)</span>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex flex-col mb-1">
+                          <label className="editable-row-label mb-1" htmlFor={`long-en-${item.id}`}>Long Description (EN)</label>
                           <textarea
-                            style={{ minWidth: "180px", minHeight: "44px" }}
+                            id={`long-en-${item.id}`}
+                            className="editable-row-textarea"
+                            style={{ maxWidth: 300, minHeight: 48, resize: "vertical" }}
                             value={longDescEN}
                             onChange={(e) => setLongDescEN(e.target.value)}
                           />
                         </div>
-                        <div>
-                          <span className="font-semibold mr-1">(ES)</span>
+                        <div className="flex flex-col">
+                          <label className="editable-row-label mb-1" htmlFor={`long-es-${item.id}`}>Long Description (ES)</label>
                           <textarea
-                            style={{ minWidth: "180px", minHeight: "44px" }}
+                            id={`long-es-${item.id}`}
+                            className="editable-row-textarea"
+                            style={{ maxWidth: 300, minHeight: 48, resize: "vertical" }}
                             value={longDescES}
                             onChange={(e) => setLongDescES(e.target.value)}
                           />
                         </div>
                       </div>
                     ) : (
-                      `${item.longDescription?.en || ""} / ${item.longDescription?.es || ""}`
-                    )}
-                  </td>
-                  <td className="border px-2 py-1 align-top">
-                    {editingItemId === item.id ? (
-                      <select
-                        multiple
-                        value={selectedStyleIds}
-                        onChange={handleMultiSelect}
-                        className="w-full p-1"
-                      >
-                        {styles.map(style => (
-                          <option key={style.id} value={style.id}>
-                            {style.name}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      (item.associatedStyles || [])
-                        .map(id => styles.find(s => s.id === id)?.name || id)
-                        .join(", ")
-                    )}
-                  </td>
-                  <td className="border px-2 py-1 align-top" style={{ minWidth: 120, maxWidth: 140 }}>
-                    {editingItemId === item.id ? (
-                      <div className="flex gap-2 flex-wrap">
-                        <button
-                          onClick={handleUpdateItem}
-                          className="bg-green-600 text-white px-2 py-1 rounded"
-                        >
-                          Update
-                        </button>
-                        <button
-                          onClick={() => setEditingItemId(null)}
-                          className="bg-gray-400 text-white px-2 py-1 rounded"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex gap-2 flex-wrap">
-                        <button
-                          onClick={() => handleEditItem(item)}
-                          className="bg-yellow-500 text-white px-2 py-1 rounded"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteItem(item.id)}
-                          className="bg-red-600 text-white px-2 py-1 rounded"
-                        >
-                          Delete
-                        </button>
+                      <div className="whitespace-pre-line break-words" style={{ maxWidth: 300 }}>
+                        <span className="block font-semibold text-xs text-gray-500 mb-0.5">EN:</span>
+                        <span>{item.longDescription?.en || ""}</span>
+                        <span className="block font-semibold text-xs text-gray-500 mt-1 mb-0.5">ES:</span>
+                        <span>{item.longDescription?.es || ""}</span>
                       </div>
                     )}
+                  </td>
+                  {/* TEMPLATE STYLES CELL */}
+                  <td className="border px-2 py-1 align-top" style={{ verticalAlign: "top" }}>
+                    {editingItemId === item.id ? (
+                      <div className="flex items-center h-full" style={{ minHeight: 40 }}>
+                        <select
+                          multiple
+                          value={selectedStyleIds}
+                          onChange={handleMultiSelect}
+                          className="editable-row-select"
+                          size={3}
+                          style={{ minWidth: 120, maxHeight: 88, verticalAlign: "middle" }}
+                        >
+                          {styles.map(style => (
+                            <option key={style.id} value={style.id}>
+                              {style.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : (
+                      <div>
+                        {(item.associatedStyles || [])
+                          .map(id => styles.find(s => s.id === id)?.name || id)
+                          .join(", ")}
+                      </div>
+                    )}
+                  </td>
+                  {/* ACTIONS CELL */}
+                  <td className="border px-2 py-1 align-top" style={{ verticalAlign: "top", minWidth: 120 }}>
+                    <div className="flex flex-col h-full justify-end items-start gap-2" style={{ minHeight: 56 }}>
+                      {editingItemId === item.id ? (
+                        <div className="flex flex-col gap-2">
+                          <button
+                            onClick={handleUpdateItem}
+                            className="bg-green-600 text-white px-2 py-1 rounded mb-1"
+                          >
+                            Update
+                          </button>
+                          <button
+                            onClick={() => setEditingItemId(null)}
+                            className="bg-gray-400 text-white px-2 py-1 rounded"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-2">
+                          <button
+                            onClick={() => handleEditItem(item)}
+                            className="bg-yellow-500 text-white px-2 py-1 rounded mb-1"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteItem(item.id)}
+                            className="bg-red-600 text-white px-2 py-1 rounded"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        {/* Inline styles for editable row */}
+        <style>{`
+          .editable-row-img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            margin-right: 0;
+            margin-bottom: 0;
+            display: block;
+          }
+          .editable-row-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 2px;
+          }
+          .editable-row-input, .editable-row-textarea, .editable-row-select {
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-size: 14px;
+            margin-bottom: 0;
+            margin-top: 0;
+            background: #fff;
+            box-sizing: border-box;
+          }
+          .editable-row-input {
+            min-height: 28px;
+          }
+          .editable-row-textarea {
+            min-height: 48px;
+            resize: vertical;
+            font-family: inherit;
+          }
+          .editable-row-select {
+            min-height: 34px;
+            max-height: 88px;
+          }
+          .editable-row-file {
+            padding: 0;
+            font-size: 13px;
+          }
+        `}</style>
       </div>
     </div>
   );
