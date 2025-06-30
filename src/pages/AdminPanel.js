@@ -461,18 +461,24 @@ export default function AdminPanel() {
                   <td className="border px-2 py-1">
                     {editingItemId === item.id ? (
                       <>
-                        <input
-                          value={shortDescEN}
-                          onChange={(e) => setShortDescEN(e.target.value)}
-                          placeholder="English"
-                          className="mb-1 w-full border p-1"
-                        />
-                        <input
-                          value={shortDescES}
-                          onChange={(e) => setShortDescES(e.target.value)}
-                          placeholder="Español"
-                          className="w-full border p-1"
-                        />
+                        <div className="mb-2">
+                          <label className="block text-sm font-medium text-gray-700">Short Description (EN)</label>
+                          <input
+                            value={shortDescEN}
+                            onChange={(e) => setShortDescEN(e.target.value)}
+                            placeholder="English"
+                            className="w-full border p-1"
+                          />
+                        </div>
+                        <div className="mb-2">
+                          <label className="block text-sm font-medium text-gray-700">Short Description (ES)</label>
+                          <input
+                            value={shortDescES}
+                            onChange={(e) => setShortDescES(e.target.value)}
+                            placeholder="Español"
+                            className="w-full border p-1"
+                          />
+                        </div>
                       </>
                     ) : (
                       `${item.shortDescription?.en || ""} / ${item.shortDescription?.es || ""}`
@@ -481,18 +487,26 @@ export default function AdminPanel() {
                   <td className="border px-2 py-1 max-w-xs break-words">
                     {editingItemId === item.id ? (
                       <>
-                        <textarea
-                          value={longDescEN}
-                          onChange={(e) => setLongDescEN(e.target.value)}
-                          placeholder="English"
-                          className="mb-1 w-full border p-1"
-                        />
-                        <textarea
-                          value={longDescES}
-                          onChange={(e) => setLongDescES(e.target.value)}
-                          placeholder="Español"
-                          className="w-full border p-1"
-                        />
+                        <div className="mb-2">
+                          <label className="block text-sm font-medium text-gray-700">Long Description (EN)</label>
+                          <textarea
+                            rows={3}
+                            value={longDescEN}
+                            onChange={(e) => setLongDescEN(e.target.value)}
+                            placeholder="English"
+                            className="w-full border p-1"
+                          />
+                        </div>
+                        <div className="mb-2">
+                          <label className="block text-sm font-medium text-gray-700">Long Description (ES)</label>
+                          <textarea
+                            rows={3}
+                            value={longDescES}
+                            onChange={(e) => setLongDescES(e.target.value)}
+                            placeholder="Español"
+                            className="w-full border p-1"
+                          />
+                        </div>
                       </>
                     ) : (
                       `${item.longDescription?.en || ""} / ${item.longDescription?.es || ""}`
