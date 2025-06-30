@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { db, storage } from "../firebase";
-import { ref, uploadBytes, getDownloadURL, listAll } from "firebase/storage";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {
   collection,
   addDoc,
@@ -9,6 +9,7 @@ import {
   deleteDoc,
   updateDoc,
   getDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 
 export default function AdminPanel() {
@@ -18,25 +19,19 @@ export default function AdminPanel() {
   const [editingStyleId, setEditingStyleId] = useState(null);
   const [editedStyleName, setEditedStyleName] = useState("");
 
-  // Library items state
+  // Library items state (for new logic)
+  const [file, setFile] = useState(null);
+  const [shortDescEN, setShortDescEN] = useState("");
+  const [shortDescES, setShortDescES] = useState("");
+  const [longDescEN, setLongDescEN] = useState("");
+  const [longDescES, setLongDescES] = useState("");
+  const [selectedStyleIds, setSelectedStyleIds] = useState([]);
+  const [saving, setSaving] = useState(false);
   const [libraryItems, setLibraryItems] = useState([]);
-  const [itemFile, setItemFile] = useState(null);
-  const [itemForm, setItemForm] = useState({
-    imageURL: "",
-    templateStyleIds: [],
-  });
-  const [descriptions, setDescriptions] = useState({
-    shortDesc: { en: "", es: "" },
-    longDesc: { en: "", es: "" },
-  });
-  const [editingItemId, setEditingItemId] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  // Handler for multilingual descriptions
-  const handleDescChange = (lang, field, value) => {
-    setDescriptions((prev) => ({
-      ...prev,
-      [field]: { ...prev[field], [lang]: value },
-    }));
+  // Handler for multi-select
+  const handleMultiSelect = (e) => {
+    const options = Array.from(e.target.selectedOptions).map((o) => o.value);
+    setSelectedStyleIds(options);
   };
 
   // Fetch template styles from Firestore
@@ -88,82 +83,78 @@ export default function AdminPanel() {
     setItemFile(e.target.files[0]);
   };
 
-  // Add or update library item (revised: image upload, duplicate check, multi-lang)
-  const handleItemFormSubmit = async (e) => {
-    e.preventDefault();
-    // Validate required fields
+  // Save function for library item (new logic)
+  const handleSaveLibraryItem = async () => {
     if (
-      (!editingItemId && !itemFile) ||
-      (!descriptions.shortDesc.en && !descriptions.shortDesc.es) ||
-      (!descriptions.longDesc.en && !descriptions.longDesc.es) ||
-      itemForm.templateStyleIds.length === 0
+      !file ||
+      !shortDescEN ||
+      !shortDescES ||
+      !longDescEN ||
+      !longDescES ||
+      selectedStyleIds.length === 0
     ) {
-      alert("Please fill all required fields and select at least one template style.");
+      alert("Please fill all fields and select styles.");
       return;
     }
-    setUploading(true);
+
+    setSaving(true);
+
     try {
-      let imageURL = itemForm.imageURL;
-      // Only check/upload if adding new or changing file
-      if (!editingItemId || itemFile) {
-        if (!itemFile) {
-          alert("Please select an image file.");
-          setUploading(false);
-          return;
-        }
-        const folderPath = "Library Items";
-        const storageRef = ref(storage, `${folderPath}/${itemFile.name}`);
-        // Check for duplicate
-        const listRef = ref(storage, folderPath);
-        const listResult = await listAll(listRef);
-        const exists = listResult.items.some(item => item.name === itemFile.name);
-        if (exists) {
-          alert("Image already exists in Firebase Storage.");
-          setUploading(false);
-          return;
-        }
-        // Upload
-        await uploadBytes(storageRef, itemFile);
-        imageURL = await getDownloadURL(storageRef);
+      const storageRef = ref(storage, `Library Items/${file.name}`);
+
+      // Check if file already exists in storage
+      try {
+        await getDownloadURL(storageRef);
+        alert("File already exists in storage.");
+        setSaving(false);
+        return;
+      } catch (e) {
+        // File doesn't exist, proceed to upload
       }
-      // Save metadata to Firestore
-      const itemData = {
-        imageURL,
-        shortDesc: {
-          en: descriptions.shortDesc.en,
-          es: descriptions.shortDesc.es,
+
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      uploadTask.on(
+        "state_changed",
+        null,
+        (error) => {
+          console.error("Upload error:", error);
+          alert("Upload failed");
+          setSaving(false);
         },
-        longDesc: {
-          en: descriptions.longDesc.en,
-          es: descriptions.longDesc.es,
-        },
-        templateStyleIds: itemForm.templateStyleIds,
-        createdAt: new Date().toISOString(),
-      };
-      if (editingItemId) {
-        // Update
-        await updateDoc(doc(db, "libraryItems", editingItemId), itemData);
-        setEditingItemId(null);
-      } else {
-        // Add new
-        await addDoc(collection(db, "libraryItems"), itemData);
-      }
-      alert("Library item saved!");
-      setItemForm({
-        imageURL: "",
-        templateStyleIds: [],
-      });
-      setDescriptions({
-        shortDesc: { en: "", es: "" },
-        longDesc: { en: "", es: "" },
-      });
-      setItemFile(null);
-      fetchLibraryItems();
-    } catch (error) {
-      console.error("Upload failed:", error);
-      alert("Failed to save. Check console for details.");
-    } finally {
-      setUploading(false);
+        async () => {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+
+          await addDoc(collection(db, "libraryItems"), {
+            imageUrl: downloadURL,
+            shortDescription: {
+              en: shortDescEN,
+              es: shortDescES,
+            },
+            longDescription: {
+              en: longDescEN,
+              es: longDescES,
+            },
+            associatedStyles: selectedStyleIds,
+            createdAt: serverTimestamp(),
+          });
+
+          alert("Library Item saved!");
+
+          // Reset form
+          setFile(null);
+          setShortDescEN("");
+          setShortDescES("");
+          setLongDescEN("");
+          setLongDescES("");
+          setSelectedStyleIds([]);
+          setSaving(false);
+        }
+      );
+    } catch (err) {
+      console.error("Save error:", err);
+      alert("Error saving item.");
+      setSaving(false);
     }
   };
 
@@ -188,14 +179,6 @@ export default function AdminPanel() {
     fetchLibraryItems();
   };
 
-  // Handle multi-select change for template styles
-  const handleMultiSelect = (e) => {
-    const options = Array.from(e.target.selectedOptions).map((o) => o.value);
-    setItemForm((f) => ({
-      ...f,
-      templateStyleIds: options,
-    }));
-  };
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -274,26 +257,23 @@ export default function AdminPanel() {
         </div>
       </div>
 
-      {/* Add/Edit Library Item Section */}
+      {/* Add Library Item Section */}
       <div className="mb-6 p-4 border border-gray-200 rounded bg-gray-50">
         <label className="block mb-2 font-medium">
-          {editingItemId ? "Edit Library Item" : "Add Library Item"}
+          Add Library Item
         </label>
-        <form className="flex flex-col gap-4" onSubmit={handleItemFormSubmit}>
+        <div className="flex flex-col gap-4">
           <div>
             <label className="block mb-1 font-medium">Image</label>
-            {itemForm.imageURL && !itemFile && (
-              <img src={itemForm.imageURL} alt="Library Item" className="w-24 h-24 object-cover mb-2 rounded border" />
-            )}
             <input
               type="file"
               accept="image/*"
-              onChange={handleFileChange}
+              onChange={e => setFile(e.target.files[0])}
               className="w-full mb-2"
             />
-            {itemFile && (
+            {file && (
               <div className="mb-2">
-                <span className="text-gray-700">{itemFile.name}</span>
+                <span className="text-gray-700">{file.name}</span>
               </div>
             )}
           </div>
@@ -302,14 +282,14 @@ export default function AdminPanel() {
             <input
               className="w-full border p-2 mb-2"
               placeholder="English"
-              value={descriptions.shortDesc.en}
-              onChange={(e) => handleDescChange("en", "shortDesc", e.target.value)}
+              value={shortDescEN}
+              onChange={e => setShortDescEN(e.target.value)}
             />
             <input
               className="w-full border p-2"
               placeholder="Español"
-              value={descriptions.shortDesc.es}
-              onChange={(e) => handleDescChange("es", "shortDesc", e.target.value)}
+              value={shortDescES}
+              onChange={e => setShortDescES(e.target.value)}
             />
           </div>
           <div className="mb-4">
@@ -317,21 +297,21 @@ export default function AdminPanel() {
             <textarea
               className="w-full border p-2 mb-2"
               placeholder="English"
-              value={descriptions.longDesc.en}
-              onChange={(e) => handleDescChange("en", "longDesc", e.target.value)}
+              value={longDescEN}
+              onChange={e => setLongDescEN(e.target.value)}
             />
             <textarea
               className="w-full border p-2"
               placeholder="Español"
-              value={descriptions.longDesc.es}
-              onChange={(e) => handleDescChange("es", "longDesc", e.target.value)}
+              value={longDescES}
+              onChange={e => setLongDescES(e.target.value)}
             />
           </div>
           <div>
             <label className="block mb-1 font-medium">Associate Template Styles</label>
             <select
               multiple
-              value={itemForm.templateStyleIds}
+              value={selectedStyleIds}
               onChange={handleMultiSelect}
               className="w-full p-2 border border-gray-300 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
               required
@@ -348,34 +328,15 @@ export default function AdminPanel() {
           </div>
           <div className="flex gap-2">
             <button
-              type="submit"
+              type="button"
               className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow-sm"
-              disabled={uploading}
+              disabled={saving}
+              onClick={handleSaveLibraryItem}
             >
-              {uploading ? "Saving..." : editingItemId ? "Save Changes" : "Add Item"}
+              {saving ? "Saving..." : "Add Item"}
             </button>
-            {editingItemId && (
-              <button
-                type="button"
-                className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded shadow-sm"
-                onClick={() => {
-                  setEditingItemId(null);
-                  setItemForm({
-                    imageURL: "",
-                    templateStyleIds: [],
-                  });
-                  setDescriptions({
-                    shortDesc: { en: "", es: "" },
-                    longDesc: { en: "", es: "" },
-                  });
-                  setItemFile(null);
-                }}
-              >
-                Cancel
-              </button>
-            )}
           </div>
-        </form>
+        </div>
       </div>
 
       {/* Library Items Table */}
