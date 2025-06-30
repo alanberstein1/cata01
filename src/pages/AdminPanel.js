@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { db } from "../firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "../firebase";
-import { collection, addDoc, getDocs, doc, deleteDoc } from "firebase/firestore";
+import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc } from "firebase/firestore";
 
 export default function AdminPanel() {
   const [styles, setStyles] = useState([]);
@@ -10,6 +10,10 @@ export default function AdminPanel() {
   const [selectedStyle, setSelectedStyle] = useState("");
   const [itemName, setItemName] = useState("");
   const [itemFile, setItemFile] = useState(null);
+
+  // Edit mode state for styles
+  const [editingStyleId, setEditingStyleId] = useState(null);
+  const [editedStyleName, setEditedStyleName] = useState("");
 
   // Fetch styles from Firestore and update styles state
   const fetchStyles = async () => {
@@ -63,6 +67,20 @@ export default function AdminPanel() {
     setItemFile(null);
   };
 
+  // Save edited style name to Firestore
+  const handleSaveStyleEdit = async (styleId) => {
+    try {
+      const docRef = doc(db, "templateStyles", styleId);
+      await updateDoc(docRef, { name: editedStyleName });
+      setEditingStyleId(null);
+      setEditedStyleName("");
+      fetchStyles(); // re-fetch styles to update UI
+    } catch (error) {
+      console.error("Failed to update style name:", error);
+      alert("Could not save changes.");
+    }
+  };
+
   return (
     <div className="p-6 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Admin Panel</h1>
@@ -72,26 +90,50 @@ export default function AdminPanel() {
         <h3 className="text-lg font-semibold mb-4">Current Template Styles</h3>
         <div className="mb-6">
           {styles.map((style) => (
-            <div
-              key={style.id}
-              className="flex justify-between items-center mb-2"
-            >
-              <span className="font-medium">{style.name}</span>
-              <div className="flex gap-2">
-                <button
-                  className="text-sm px-3 py-1 bg-yellow-400 hover:bg-yellow-500 text-white rounded"
-                  // Placeholder edit handler
-                  onClick={() => alert(`Edit style: ${style.name}`)}
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDeleteStyle(style.id)}
-                  className="text-sm px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                >
-                  Delete
-                </button>
-              </div>
+            <div key={style.id} className="flex items-center justify-between py-1 border-b">
+              {editingStyleId === style.id ? (
+                <>
+                  <input
+                    type="text"
+                    value={editedStyleName}
+                    onChange={(e) => setEditedStyleName(e.target.value)}
+                    className="border p-1 mr-2 flex-1"
+                  />
+                  <button
+                    onClick={() => handleSaveStyleEdit(style.id)}
+                    className="bg-green-600 text-white px-3 py-1 rounded mr-2"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setEditingStyleId(null)}
+                    className="bg-gray-400 text-white px-3 py-1 rounded"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="flex-1">{style.name}</span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setEditingStyleId(style.id);
+                        setEditedStyleName(style.name);
+                      }}
+                      className="bg-yellow-500 text-white px-3 py-1 rounded"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteStyle(style.id)}
+                      className="bg-red-600 text-white px-3 py-1 rounded"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>
