@@ -428,40 +428,50 @@ export default function AdminPanel() {
         <div className="overflow-x-auto">
           <table className="min-w-full border text-sm">
             <colgroup>
-              <col style={{ width: "56px" }} /> {/* Image column: ~50% width of previous (was w-14, now ~w-7) */}
+              <col style={{ width: "50px", maxWidth: "60px", flexBasis: "50px" }} /> {/* Image column: reduced width */}
               <col style={{ width: "180px" }} />
               <col style={{ width: "240px" }} />
               <col />
-              <col style={{ width: "120px" }} />
+              <col style={{ width: "130px" }} /> {/* Slightly increased for full action buttons */}
             </colgroup>
             <thead>
               <tr className="bg-gray-100">
-                <th className="border px-1 py-1" style={{ minWidth: 48 }}>Image</th>
+                <th className="border px-1 py-1" style={{ minWidth: 44, width: 50 }}>Image</th>
                 <th className="border px-2 py-1">Short Description</th>
                 <th className="border px-2 py-1">Long Description</th>
                 <th className="border px-2 py-1">Template Styles</th>
-                <th className="border px-2 py-1">Actions</th>
+                <th className="border px-2 py-1" style={{ minWidth: 120 }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {libraryItems.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50">
-                  <td className="border px-1 py-1 align-top">
+                  <td className="border px-1 py-1 align-top" style={{ width: 50, maxWidth: 60 }}>
                     {editingItemId === item.id ? (
-                      <>
+                      <div className="flex flex-col items-center" style={{ minWidth: 44 }}>
                         {currentImageURL && (
-                          <div className="mb-2">
+                          <div className="mb-1">
                             <img src={currentImageURL} alt="Current" className="w-7 h-7 object-cover rounded border" />
-                            <div className="text-xs text-gray-500">Current image</div>
+                            <div className="text-xs text-gray-500">Current</div>
                           </div>
                         )}
-                        <input type="file" onChange={handleFileChange} />
-                      </>
+                        <input
+                          type="file"
+                          onChange={handleFileChange}
+                          style={{
+                            width: "48px",
+                            minWidth: "48px",
+                            fontSize: "0.7rem",
+                            marginLeft: "-2px"
+                          }}
+                        />
+                      </div>
                     ) : (
                       <img
                         src={item.imageUrl}
                         alt="Library"
                         className="w-7 h-7 object-cover rounded border"
+                        style={{ minWidth: "28px", maxWidth: "48px" }}
                       />
                     )}
                   </td>
@@ -533,12 +543,12 @@ export default function AdminPanel() {
                         .join(", ")
                     )}
                   </td>
-                  <td className="border px-2 py-1 align-top">
+                  <td className="border px-2 py-1 align-top" style={{ minWidth: 120, maxWidth: 140 }}>
                     {editingItemId === item.id ? (
-                      <>
+                      <div className="flex gap-2 flex-wrap">
                         <button
                           onClick={handleUpdateItem}
-                          className="bg-green-600 text-white px-2 py-1 rounded mr-2"
+                          className="bg-green-600 text-white px-2 py-1 rounded"
                         >
                           Update
                         </button>
@@ -548,12 +558,12 @@ export default function AdminPanel() {
                         >
                           Cancel
                         </button>
-                      </>
+                      </div>
                     ) : (
-                      <>
+                      <div className="flex gap-2 flex-wrap">
                         <button
                           onClick={() => handleEditItem(item)}
-                          className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
+                          className="bg-yellow-500 text-white px-2 py-1 rounded"
                         >
                           Edit
                         </button>
@@ -563,7 +573,7 @@ export default function AdminPanel() {
                         >
                           Delete
                         </button>
-                      </>
+                      </div>
                     )}
                   </td>
                 </tr>
