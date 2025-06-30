@@ -80,7 +80,7 @@ export default function AdminPanel() {
 
   // Library Items CRUD
   const handleFileChange = (e) => {
-    setItemFile(e.target.files[0]);
+    setFile(e.target.files[0]);
   };
 
   // Save function for library item (new logic)
@@ -160,16 +160,12 @@ export default function AdminPanel() {
 
   // Edit library item
   const handleEditItem = (item) => {
-    setEditingItemId(item.id);
-    setItemForm({
-      imageURL: item.imageURL || "",
-      templateStyleIds: item.templateStyleIds || [],
-    });
-    setDescriptions({
-      shortDesc: item.shortDesc || { en: "", es: "" },
-      longDesc: item.longDesc || { en: "", es: "" },
-    });
-    setItemFile(null);
+    setShortDescEN(item.shortDescription?.en || "");
+    setShortDescES(item.shortDescription?.es || "");
+    setLongDescEN(item.longDescription?.en || "");
+    setLongDescES(item.longDescription?.es || "");
+    setSelectedStyleIds(item.associatedStyles || []);
+    setFile(null);
   };
 
   // Delete library item
@@ -268,7 +264,7 @@ export default function AdminPanel() {
             <input
               type="file"
               accept="image/*"
-              onChange={e => setFile(e.target.files[0])}
+              onChange={handleFileChange}
               className="w-full mb-2"
             />
             {file && (
@@ -368,23 +364,23 @@ export default function AdminPanel() {
                 <tr key={item.id} className="hover:bg-gray-50">
                   <td className="border px-2 py-1">
                     <img
-                      src={item.imageURL}
+                      src={item.imageUrl}
                       alt="Library"
                       className="w-14 h-14 object-cover rounded border"
                     />
                   </td>
                   <td className="border px-2 py-1">
-                    {item.shortDesc
-                      ? `${item.shortDesc.en || ""}${item.shortDesc.es ? " / " + item.shortDesc.es : ""}`
+                    {item.shortDescription
+                      ? `${item.shortDescription.en || ""}${item.shortDescription.es ? " / " + item.shortDescription.es : ""}`
                       : ""}
                   </td>
                   <td className="border px-2 py-1 max-w-xs break-words">
-                    {item.longDesc
-                      ? `${item.longDesc.en || ""}${item.longDesc.es ? " / " + item.longDesc.es : ""}`
+                    {item.longDescription
+                      ? `${item.longDescription.en || ""}${item.longDescription.es ? " / " + item.longDescription.es : ""}`
                       : ""}
                   </td>
                   <td className="border px-2 py-1">
-                    {(item.templateStyleIds || [])
+                    {(item.associatedStyles || [])
                       .map(
                         (sid) =>
                           styles.find((s) => s.id === sid)?.name || sid
