@@ -427,9 +427,16 @@ export default function AdminPanel() {
         <h3 className="text-lg font-semibold mb-4">Library Items</h3>
         <div className="overflow-x-auto">
           <table className="min-w-full border text-sm">
+            <colgroup>
+              <col style={{ width: "56px" }} /> {/* Image column: ~50% width of previous (was w-14, now ~w-7) */}
+              <col style={{ width: "180px" }} />
+              <col style={{ width: "240px" }} />
+              <col />
+              <col style={{ width: "120px" }} />
+            </colgroup>
             <thead>
               <tr className="bg-gray-100">
-                <th className="border px-2 py-1">Image</th>
+                <th className="border px-1 py-1" style={{ minWidth: 48 }}>Image</th>
                 <th className="border px-2 py-1">Short Description</th>
                 <th className="border px-2 py-1">Long Description</th>
                 <th className="border px-2 py-1">Template Styles</th>
@@ -439,12 +446,12 @@ export default function AdminPanel() {
             <tbody>
               {libraryItems.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50">
-                  <td className="border px-2 py-1">
+                  <td className="border px-1 py-1 align-top">
                     {editingItemId === item.id ? (
                       <>
                         {currentImageURL && (
                           <div className="mb-2">
-                            <img src={currentImageURL} alt="Current" className="w-14 h-14 object-cover rounded border" />
+                            <img src={currentImageURL} alt="Current" className="w-7 h-7 object-cover rounded border" />
                             <div className="text-xs text-gray-500">Current image</div>
                           </div>
                         )}
@@ -454,59 +461,59 @@ export default function AdminPanel() {
                       <img
                         src={item.imageUrl}
                         alt="Library"
-                        className="w-14 h-14 object-cover rounded border"
+                        className="w-7 h-7 object-cover rounded border"
                       />
                     )}
                   </td>
-                  <td className="border px-2 py-1">
+                  <td className="border px-2 py-1 align-top">
                     {editingItemId === item.id ? (
                       <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                        <label>
-                          <strong>Short Description (EN):</strong>
+                        <div>
+                          <span className="font-semibold mr-1">(EN)</span>
                           <textarea
-                            style={{ minWidth: "200px", minHeight: "40px" }}
+                            style={{ minWidth: "140px", minHeight: "32px" }}
                             value={shortDescEN}
                             onChange={(e) => setShortDescEN(e.target.value)}
                           />
-                        </label>
-                        <label>
-                          <strong>Short Description (ES):</strong>
+                        </div>
+                        <div>
+                          <span className="font-semibold mr-1">(ES)</span>
                           <textarea
-                            style={{ minWidth: "200px", minHeight: "40px" }}
+                            style={{ minWidth: "140px", minHeight: "32px" }}
                             value={shortDescES}
                             onChange={(e) => setShortDescES(e.target.value)}
                           />
-                        </label>
+                        </div>
                       </div>
                     ) : (
                       `${item.shortDescription?.en || ""} / ${item.shortDescription?.es || ""}`
                     )}
                   </td>
-                  <td className="border px-2 py-1 max-w-xs break-words">
+                  <td className="border px-2 py-1 align-top max-w-xs break-words">
                     {editingItemId === item.id ? (
                       <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                        <label>
-                          <strong>Long Description (EN):</strong>
+                        <div>
+                          <span className="font-semibold mr-1">(EN)</span>
                           <textarea
-                            style={{ minWidth: "200px", minHeight: "60px" }}
+                            style={{ minWidth: "180px", minHeight: "44px" }}
                             value={longDescEN}
                             onChange={(e) => setLongDescEN(e.target.value)}
                           />
-                        </label>
-                        <label>
-                          <strong>Long Description (ES):</strong>
+                        </div>
+                        <div>
+                          <span className="font-semibold mr-1">(ES)</span>
                           <textarea
-                            style={{ minWidth: "200px", minHeight: "60px" }}
+                            style={{ minWidth: "180px", minHeight: "44px" }}
                             value={longDescES}
                             onChange={(e) => setLongDescES(e.target.value)}
                           />
-                        </label>
+                        </div>
                       </div>
                     ) : (
                       `${item.longDescription?.en || ""} / ${item.longDescription?.es || ""}`
                     )}
                   </td>
-                  <td className="border px-2 py-1">
+                  <td className="border px-2 py-1 align-top">
                     {editingItemId === item.id ? (
                       <select
                         multiple
@@ -526,7 +533,7 @@ export default function AdminPanel() {
                         .join(", ")
                     )}
                   </td>
-                  <td className="border px-2 py-1">
+                  <td className="border px-2 py-1 align-top">
                     {editingItemId === item.id ? (
                       <>
                         <button
