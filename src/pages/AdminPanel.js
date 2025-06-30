@@ -24,12 +24,21 @@ export default function AdminPanel() {
   const [itemFile, setItemFile] = useState(null);
   const [itemForm, setItemForm] = useState({
     imageURL: "",
-    shortDescription: "",
-    longDescription: "",
     templateStyleIds: [],
+  });
+  const [descriptions, setDescriptions] = useState({
+    shortDesc: { en: "", es: "" },
+    longDesc: { en: "", es: "" },
   });
   const [editingItemId, setEditingItemId] = useState(null);
   const [uploading, setUploading] = useState(false);
+  // Handler for multilingual descriptions
+  const handleDescChange = (lang, field, value) => {
+    setDescriptions((prev) => ({
+      ...prev,
+      [field]: { ...prev[field], [lang]: value },
+    }));
+  };
 
   // Fetch template styles from Firestore
   const fetchStyles = async () => {
@@ -86,8 +95,8 @@ export default function AdminPanel() {
     // Validate required fields
     if (
       (!editingItemId && !itemFile) ||
-      !itemForm.shortDescription ||
-      !itemForm.longDescription ||
+      (!descriptions.shortDesc.en && !descriptions.shortDesc.es) ||
+      (!descriptions.longDesc.en && !descriptions.longDesc.es) ||
       itemForm.templateStyleIds.length === 0
     ) {
       alert("Please fill all required fields and select at least one template style.");
@@ -106,8 +115,8 @@ export default function AdminPanel() {
     }
     const itemData = {
       imageURL,
-      shortDescription: itemForm.shortDescription,
-      longDescription: itemForm.longDescription,
+      shortDesc: descriptions.shortDesc,
+      longDesc: descriptions.longDesc,
       templateStyleIds: itemForm.templateStyleIds,
     };
     try {
@@ -121,9 +130,11 @@ export default function AdminPanel() {
       }
       setItemForm({
         imageURL: "",
-        shortDescription: "",
-        longDescription: "",
         templateStyleIds: [],
+      });
+      setDescriptions({
+        shortDesc: { en: "", es: "" },
+        longDesc: { en: "", es: "" },
       });
       setItemFile(null);
       fetchLibraryItems();
@@ -139,9 +150,11 @@ export default function AdminPanel() {
     setEditingItemId(item.id);
     setItemForm({
       imageURL: item.imageURL || "",
-      shortDescription: item.shortDescription || "",
-      longDescription: item.longDescription || "",
       templateStyleIds: item.templateStyleIds || [],
+    });
+    setDescriptions({
+      shortDesc: item.shortDesc || { en: "", es: "" },
+      longDesc: item.longDesc || { en: "", es: "" },
     });
     setItemFile(null);
   };
@@ -262,22 +275,36 @@ export default function AdminPanel() {
               </div>
             )}
           </div>
-          <input
-            type="text"
-            placeholder="Short Description"
-            value={itemForm.shortDescription}
-            onChange={e => setItemForm(f => ({ ...f, shortDescription: e.target.value }))}
-            className="w-full p-2 border border-gray-300 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-            required
-          />
-          <textarea
-            placeholder="Long Description"
-            value={itemForm.longDescription}
-            onChange={e => setItemForm(f => ({ ...f, longDescription: e.target.value }))}
-            className="w-full p-2 border border-gray-300 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-            rows={3}
-            required
-          />
+          <div className="mb-4">
+            <label className="block font-medium mb-1">Short Description</label>
+            <input
+              className="w-full border p-2 mb-2"
+              placeholder="English"
+              value={descriptions.shortDesc.en}
+              onChange={(e) => handleDescChange("en", "shortDesc", e.target.value)}
+            />
+            <input
+              className="w-full border p-2"
+              placeholder="Español"
+              value={descriptions.shortDesc.es}
+              onChange={(e) => handleDescChange("es", "shortDesc", e.target.value)}
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block font-medium mb-1">Long Description</label>
+            <textarea
+              className="w-full border p-2 mb-2"
+              placeholder="English"
+              value={descriptions.longDesc.en}
+              onChange={(e) => handleDescChange("en", "longDesc", e.target.value)}
+            />
+            <textarea
+              className="w-full border p-2"
+              placeholder="Español"
+              value={descriptions.longDesc.es}
+              onChange={(e) => handleDescChange("es", "longDesc", e.target.value)}
+            />
+          </div>
           <div>
             <label className="block mb-1 font-medium">Associate Template Styles</label>
             <select
@@ -313,9 +340,11 @@ export default function AdminPanel() {
                   setEditingItemId(null);
                   setItemForm({
                     imageURL: "",
-                    shortDescription: "",
-                    longDescription: "",
                     templateStyleIds: [],
+                  });
+                  setDescriptions({
+                    shortDesc: { en: "", es: "" },
+                    longDesc: { en: "", es: "" },
                   });
                   setItemFile(null);
                 }}
@@ -361,8 +390,16 @@ export default function AdminPanel() {
                       className="w-14 h-14 object-cover rounded border"
                     />
                   </td>
-                  <td className="border px-2 py-1">{item.shortDescription}</td>
-                  <td className="border px-2 py-1 max-w-xs break-words">{item.longDescription}</td>
+                  <td className="border px-2 py-1">
+                    {item.shortDesc
+                      ? `${item.shortDesc.en || ""}${item.shortDesc.es ? " / " + item.shortDesc.es : ""}`
+                      : ""}
+                  </td>
+                  <td className="border px-2 py-1 max-w-xs break-words">
+                    {item.longDesc
+                      ? `${item.longDesc.en || ""}${item.longDesc.es ? " / " + item.longDesc.es : ""}`
+                      : ""}
+                  </td>
                   <td className="border px-2 py-1">
                     {(item.templateStyleIds || [])
                       .map(
