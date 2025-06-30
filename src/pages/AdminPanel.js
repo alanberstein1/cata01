@@ -31,13 +31,8 @@ export default function AdminPanel() {
 
   // Inline edit states for library items
   const [editingItemId, setEditingItemId] = useState(null);
-  const [editFile, setEditFile] = useState(null);
-  const [editShortDescEN, setEditShortDescEN] = useState("");
-  const [editShortDescES, setEditShortDescES] = useState("");
-  const [editLongDescEN, setEditLongDescEN] = useState("");
-  const [editLongDescES, setEditLongDescES] = useState("");
-  const [editSelectedStyleIds, setEditSelectedStyleIds] = useState([]);
-  const [editImageUrl, setEditImageUrl] = useState("");
+  // For editing in-table, reuse main add form states for simplicity
+  const [currentImageURL, setCurrentImageURL] = useState("");
 
   // Fetch template styles from Firestore
   const fetchStyles = async () => {
@@ -178,13 +173,13 @@ export default function AdminPanel() {
   // When "Edit" is clicked for a library item
   const handleEditItem = (item) => {
     setEditingItemId(item.id);
-    setEditFile(null);
-    setEditShortDescEN(item.shortDescription?.en || "");
-    setEditShortDescES(item.shortDescription?.es || "");
-    setEditLongDescEN(item.longDescription?.en || "");
-    setEditLongDescES(item.longDescription?.es || "");
-    setEditSelectedStyleIds(item.associatedStyles || []);
-    setEditImageUrl(item.imageUrl || "");
+    setShortDescEN(item.shortDescription?.en || "");
+    setShortDescES(item.shortDescription?.es || "");
+    setLongDescEN(item.longDescription?.en || "");
+    setLongDescES(item.longDescription?.es || "");
+    setSelectedStyleIds(item.associatedStyles || []);
+    setFile(null);
+    setCurrentImageURL(item.imageUrl || "");
   };
 
   // Cancel editing a library item
@@ -440,7 +435,15 @@ export default function AdminPanel() {
                 <tr key={item.id} className="hover:bg-gray-50">
                   <td className="border px-2 py-1">
                     {editingItemId === item.id ? (
-                      <input type="file" onChange={handleFileChange} />
+                      <>
+                        {currentImageURL && (
+                          <div className="mb-2">
+                            <img src={currentImageURL} alt="Current" className="w-14 h-14 object-cover rounded border" />
+                            <div className="text-xs text-gray-500">Current image</div>
+                          </div>
+                        )}
+                        <input type="file" onChange={handleFileChange} />
+                      </>
                     ) : (
                       <img
                         src={item.imageUrl}
