@@ -29,14 +29,14 @@ export default function AdminPanel() {
   const [selectedStyleIds, setSelectedStyleIds] = useState([]);
   const [saving, setSaving] = useState(false);
   const [libraryItems, setLibraryItems] = useState([]);
-  // Edit state for library items
+  // Edit state for library items (new logic)
   const [editingItemId, setEditingItemId] = useState(null);
   const [editForm, setEditForm] = useState({
-    shortDesc: { en: "", es: "" },
-    longDesc: { en: "", es: "" },
-    associatedStyles: [],
-    file: null,
-    imageUrl: "",
+    shortDescEN: "",
+    shortDescES: "",
+    longDescEN: "",
+    longDescES: "",
+    selectedStyleIds: [],
   });
   // Handler for multi-select
   const handleMultiSelect = (e) => {
@@ -172,58 +172,35 @@ export default function AdminPanel() {
   const handleEditItem = (item) => {
     setEditingItemId(item.id);
     setEditForm({
-      shortDesc: item.shortDescription || { en: "", es: "" },
-      longDesc: item.longDescription || { en: "", es: "" },
-      associatedStyles: item.associatedStyles || [],
-      file: null,
-      imageUrl: item.imageUrl || "",
+      shortDescEN: item.shortDescription?.en || "",
+      shortDescES: item.shortDescription?.es || "",
+      longDescEN: item.longDescription?.en || "",
+      longDescES: item.longDescription?.es || "",
+      selectedStyleIds: item.associatedStyles || [],
     });
   };
 
-  // Update library item
+  // Update library item (new logic)
   const handleUpdateLibraryItem = async () => {
-    if (
-      !editForm.shortDesc.en ||
-      !editForm.shortDesc.es ||
-      !editForm.longDesc.en ||
-      !editForm.longDesc.es ||
-      editForm.associatedStyles.length === 0
-    ) {
-      alert("Please fill all fields.");
-      return;
-    }
-
-    setSaving(true);
-    let newImageUrl = editForm.imageUrl;
-
     try {
-      if (editForm.file) {
-        const storageRef = ref(storage, `Library Items/${editForm.file.name}`);
-        const uploadTask = uploadBytesResumable(storageRef, editForm.file);
-        await new Promise((resolve, reject) => {
-          uploadTask.on("state_changed", null, reject, async () => {
-            newImageUrl = await getDownloadURL(uploadTask.snapshot.ref);
-            resolve();
-          });
-        });
-      }
-
       const docRef = doc(db, "libraryItems", editingItemId);
       await updateDoc(docRef, {
-        imageUrl: newImageUrl,
-        shortDescription: editForm.shortDesc,
-        longDescription: editForm.longDesc,
-        associatedStyles: editForm.associatedStyles,
+        shortDescription: {
+          en: editForm.shortDescEN,
+          es: editForm.shortDescES,
+        },
+        longDescription: {
+          en: editForm.longDescEN,
+          es: editForm.longDescES,
+        },
+        associatedStyles: editForm.selectedStyleIds,
       });
-
-      alert("Item updated!");
       setEditingItemId(null);
-      setSaving(false);
       fetchLibraryItems();
+      alert("Library item updated!");
     } catch (err) {
       console.error("Update error:", err);
       alert("Failed to update item.");
-      setSaving(false);
     }
   };
 
@@ -420,68 +397,8 @@ export default function AdminPanel() {
                 </tr>
               )}
               {libraryItems.map((item) => (
-                editingItemId === item.id ? (
-                  <tr key={item.id} className="bg-yellow-50">
-                    <td className="border px-2 py-1">
-                      {editForm.file ? (
-                        <span>{editForm.file.name}</span>
-                      ) : (
-                        <img src={editForm.imageUrl} alt="Preview" className="w-14 h-14 object-cover" />
-                      )}
-                      <input type="file" onChange={(e) => setEditForm(prev => ({ ...prev, file: e.target.files[0] }))} />
-                    </td>
-                    <td className="border px-2 py-1">
-                      <input
-                        value={editForm.shortDesc.en}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, shortDesc: { ...prev.shortDesc, en: e.target.value } }))}
-                        placeholder="EN"
-                        className="w-full border p-1 mb-1"
-                      />
-                      <input
-                        value={editForm.shortDesc.es}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, shortDesc: { ...prev.shortDesc, es: e.target.value } }))}
-                        placeholder="ES"
-                        className="w-full border p-1"
-                      />
-                    </td>
-                    <td className="border px-2 py-1">
-                      <textarea
-                        value={editForm.longDesc.en}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, longDesc: { ...prev.longDesc, en: e.target.value } }))}
-                        placeholder="EN"
-                        className="w-full border p-1 mb-1"
-                      />
-                      <textarea
-                        value={editForm.longDesc.es}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, longDesc: { ...prev.longDesc, es: e.target.value } }))}
-                        placeholder="ES"
-                        className="w-full border p-1"
-                      />
-                    </td>
-                    <td className="border px-2 py-1">
-                      <select
-                        multiple
-                        value={editForm.associatedStyles}
-                        onChange={(e) =>
-                          setEditForm(prev => ({
-                            ...prev,
-                            associatedStyles: Array.from(e.target.selectedOptions).map(opt => opt.value)
-                          }))
-                        }
-                        className="w-full border p-1"
-                      >
-                        {styles.map(style => (
-                          <option key={style.id} value={style.id}>{style.name}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="border px-2 py-1">
-                      <button onClick={handleUpdateLibraryItem} className="bg-green-600 text-white px-2 py-1 rounded mr-2">Save</button>
-                      <button onClick={() => setEditingItemId(null)} className="bg-gray-400 text-white px-2 py-1 rounded">Cancel</button>
-                    </td>
-                  </tr>
-                ) : (
-                  <tr key={item.id} className="hover:bg-gray-50">
+                <React.Fragment key={item.id}>
+                  <tr className="hover:bg-gray-50">
                     <td className="border px-2 py-1">
                       <img
                         src={item.imageUrl}
@@ -513,7 +430,67 @@ export default function AdminPanel() {
                       </button>
                     </td>
                   </tr>
-                )
+                  {editingItemId === item.id && (
+                    <tr className="bg-gray-100">
+                      <td colSpan="5" className="p-4">
+                        <div className="grid gap-4">
+                          <div>
+                            <label className="block font-medium">Short Description</label>
+                            <input
+                              className="w-full border p-2 mb-2"
+                              placeholder="English"
+                              value={editForm.shortDescEN}
+                              onChange={e => setEditForm({ ...editForm, shortDescEN: e.target.value })}
+                            />
+                            <input
+                              className="w-full border p-2"
+                              placeholder="Español"
+                              value={editForm.shortDescES}
+                              onChange={e => setEditForm({ ...editForm, shortDescES: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label className="block font-medium">Long Description</label>
+                            <textarea
+                              className="w-full border p-2 mb-2"
+                              placeholder="English"
+                              value={editForm.longDescEN}
+                              onChange={e => setEditForm({ ...editForm, longDescEN: e.target.value })}
+                            />
+                            <textarea
+                              className="w-full border p-2"
+                              placeholder="Español"
+                              value={editForm.longDescES}
+                              onChange={e => setEditForm({ ...editForm, longDescES: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <label className="block font-medium">Associated Styles</label>
+                            <select
+                              multiple
+                              className="w-full p-2 border rounded"
+                              value={editForm.selectedStyleIds}
+                              onChange={e =>
+                                setEditForm({
+                                  ...editForm,
+                                  selectedStyleIds: Array.from(e.target.selectedOptions).map(o => o.value),
+                                })
+                              }
+                            >
+                              {styles.map(style => (
+                                <option key={style.id} value={style.id}>{style.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="flex gap-2">
+                            <button onClick={handleUpdateLibraryItem} className="bg-green-600 text-white px-4 py-2 rounded">Update</button>
+                            <button onClick={() => setEditingItemId(null)} className="bg-gray-400 text-white px-4 py-2 rounded">Cancel</button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>
