@@ -12,6 +12,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 
+
 export default function AdminPanel() {
   // Template styles state
   const [styles, setStyles] = useState([]);
