@@ -195,51 +195,57 @@ export default function AdminPanel() {
   };
 
   // Update library item (with optional image upload)
-  const handleUpdateLibraryItem = async () => {
+  const handleUpdateItem = async () => {
+    if (!editingItemId) {
+      alert("No item selected for update.");
+      return;
+    }
+
+    setSaving(true);
+
     try {
-      let imageUrl = editImageUrl;
-      if (editFile) {
-        // Upload new image
-        const storageRef = ref(storage, `Library Items/${editFile.name}`);
-        const uploadTask = uploadBytesResumable(storageRef, editFile);
+      const docRef = doc(db, "libraryItems", editingItemId);
+
+      const updatedData = {
+        shortDescription: { en: shortDescEN, es: shortDescES },
+        longDescription: { en: longDescEN, es: longDescES },
+        associatedStyles: selectedStyleIds,
+      };
+
+      if (file) {
+        const storageRef = ref(storage, `Library Items/${file.name}`);
+        const uploadTask = uploadBytesResumable(storageRef, file);
+
         await new Promise((resolve, reject) => {
           uploadTask.on(
             "state_changed",
             null,
             reject,
             async () => {
-              imageUrl = await getDownloadURL(uploadTask.snapshot.ref);
+              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+              updatedData.imageUrl = downloadURL;
               resolve();
             }
           );
         });
       }
-      const docRef = doc(db, "libraryItems", editingItemId);
-      await updateDoc(docRef, {
-        shortDescription: {
-          en: editShortDescEN,
-          es: editShortDescES,
-        },
-        longDescription: {
-          en: editLongDescEN,
-          es: editLongDescES,
-        },
-        associatedStyles: editSelectedStyleIds,
-        ...(editFile ? { imageUrl } : {}),
-      });
+
+      await updateDoc(docRef, updatedData);
+
+      alert("Item updated successfully!");
       setEditingItemId(null);
-      setEditFile(null);
-      setEditShortDescEN("");
-      setEditShortDescES("");
-      setEditLongDescEN("");
-      setEditLongDescES("");
-      setEditSelectedStyleIds([]);
-      setEditImageUrl("");
+      setFile(null);
+      setShortDescEN("");
+      setShortDescES("");
+      setLongDescEN("");
+      setLongDescES("");
+      setSelectedStyleIds([]);
       fetchLibraryItems();
-      alert("Library item updated!");
-    } catch (err) {
-      console.error("Update error:", err);
+    } catch (error) {
+      console.error("Update error:", error);
       alert("Failed to update item.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -516,7 +522,7 @@ export default function AdminPanel() {
                     {editingItemId === item.id ? (
                       <>
                         <button
-                          onClick={() => handleUpdateLibraryItem(item.id)}
+                          onClick={handleUpdateItem}
                           className="bg-green-600 text-white px-2 py-1 rounded mr-2"
                         >
                           Update
