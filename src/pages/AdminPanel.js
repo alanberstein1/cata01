@@ -447,23 +447,24 @@ export default function AdminPanel() {
               {libraryItems.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50 editable-row">
                   {/* IMAGE CELL */}
-                  <td className="border px-1 py-1 align-top" style={{ width: "80px", minWidth: 56 }}>
+                  <td
+                    style={{ verticalAlign: 'top', padding: '10px', width: "80px", minWidth: 56 }}
+                  >
                     {editingItemId === item.id ? (
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 56 }}>
-                        {currentImageURL && (
-                          <img src={currentImageURL} alt="Current" className="editable-row-img" />
+                        {item.imageUrl && (
+                          <img
+                            src={item.imageUrl}
+                            alt="Current"
+                            style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #d1d5db', marginBottom: 0 }}
+                          />
                         )}
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 4 }}>
+                        <div style={{ marginTop: '5px', width: '100%' }}>
                           <input
                             type="file"
                             onChange={handleFileChange}
-                            className="editable-row-file"
+                            style={{ width: '100%' }}
                           />
-                          {currentImageURL && (
-                            <div className="text-xs text-gray-500 mt-1" style={{ fontSize: "11px" }}>
-                              Current
-                            </div>
-                          )}
                         </div>
                       </div>
                     ) : (
@@ -477,29 +478,23 @@ export default function AdminPanel() {
                     )}
                   </td>
                   {/* SHORT DESCRIPTION CELL */}
-                  <td className="border px-2 py-1 align-top" style={{ verticalAlign: "top" }}>
+                  <td
+                    style={{ verticalAlign: 'top', padding: '10px' }}
+                  >
                     {editingItemId === item.id ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <span style={{ fontWeight: 'bold', fontSize: 13, color: '#374151' }}>(EN)</span>
-                          <input
-                            id={`short-en-${item.id}`}
-                            className="editable-row-input"
-                            style={{ maxWidth: 300, minHeight: 28 }}
-                            value={shortDescEN}
-                            onChange={(e) => setShortDescEN(e.target.value)}
-                          />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <span style={{ fontWeight: 'bold', fontSize: 13, color: '#374151' }}>(ES)</span>
-                          <input
-                            id={`short-es-${item.id}`}
-                            className="editable-row-input"
-                            style={{ maxWidth: 300, minHeight: 28 }}
-                            value={shortDescES}
-                            onChange={(e) => setShortDescES(e.target.value)}
-                          />
-                        </div>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <input
+                          placeholder="EN"
+                          value={shortDescEN}
+                          onChange={e => setShortDescEN(e.target.value)}
+                          style={{ width: '100%', marginBottom: '4px' }}
+                        />
+                        <input
+                          placeholder="ES"
+                          value={shortDescES}
+                          onChange={e => setShortDescES(e.target.value)}
+                          style={{ width: '100%', marginBottom: '4px' }}
+                        />
                       </div>
                     ) : (
                       <div className="whitespace-pre-line break-words" style={{ maxWidth: 300 }}>
@@ -511,31 +506,23 @@ export default function AdminPanel() {
                     )}
                   </td>
                   {/* LONG DESCRIPTION CELL */}
-                  <td className="border px-2 py-1 align-top" style={{ verticalAlign: "top" }}>
+                  <td
+                    style={{ verticalAlign: 'top', padding: '10px' }}
+                  >
                     {editingItemId === item.id ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <span style={{ fontWeight: 'bold', fontSize: 13, color: '#374151' }}>(EN)</span>
-                          <textarea
-                            id={`long-en-${item.id}`}
-                            className="editable-row-textarea"
-                            style={{ maxWidth: 300, resize: "vertical" }}
-                            rows={2}
-                            value={longDescEN}
-                            onChange={(e) => setLongDescEN(e.target.value)}
-                          />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <span style={{ fontWeight: 'bold', fontSize: 13, color: '#374151' }}>(ES)</span>
-                          <textarea
-                            id={`long-es-${item.id}`}
-                            className="editable-row-textarea"
-                            style={{ maxWidth: 300, resize: "vertical" }}
-                            rows={2}
-                            value={longDescES}
-                            onChange={(e) => setLongDescES(e.target.value)}
-                          />
-                        </div>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <textarea
+                          placeholder="EN"
+                          value={longDescEN}
+                          onChange={e => setLongDescEN(e.target.value)}
+                          style={{ width: '100%', marginBottom: '4px' }}
+                        />
+                        <textarea
+                          placeholder="ES"
+                          value={longDescES}
+                          onChange={e => setLongDescES(e.target.value)}
+                          style={{ width: '100%', marginBottom: '4px' }}
+                        />
                       </div>
                     ) : (
                       <div className="whitespace-pre-line break-words" style={{ maxWidth: 300 }}>
@@ -547,7 +534,9 @@ export default function AdminPanel() {
                     )}
                   </td>
                   {/* TEMPLATE STYLES CELL */}
-                  <td className="border px-2 py-1 align-top" style={{ verticalAlign: "top" }}>
+                  <td
+                    style={{ verticalAlign: 'top', padding: '10px' }}
+                  >
                     {editingItemId === item.id ? (
                       <div className="flex items-center h-full" style={{ minHeight: 40 }}>
                         <select
@@ -556,7 +545,7 @@ export default function AdminPanel() {
                           onChange={handleMultiSelect}
                           className="editable-row-select"
                           size={3}
-                          style={{ minWidth: 120, maxHeight: 88, verticalAlign: "middle" }}
+                          style={{ maxHeight: '60px', maxWidth: '150px' }}
                         >
                           {styles.map(style => (
                             <option key={style.id} value={style.id}>
@@ -574,7 +563,9 @@ export default function AdminPanel() {
                     )}
                   </td>
                   {/* ACTIONS CELL */}
-                  <td className="border px-2 py-1 align-top" style={{ verticalAlign: "top", minWidth: 120 }}>
+                  <td
+                    style={{ verticalAlign: 'top', padding: '10px', minWidth: 120 }}
+                  >
                     <div style={{ display: "flex", flexDirection: "column", gap: "8px", minHeight: 56, justifyContent: "flex-end", alignItems: "start" }}>
                       {editingItemId === item.id ? (
                         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
