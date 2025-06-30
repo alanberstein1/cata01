@@ -67,43 +67,63 @@ export default function AdminPanel() {
     <div className="p-6 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Admin Panel</h1>
 
-      {/* Add Template Style Section */}
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold mb-2">Current Template Styles</h3>
-        <ul className="mb-4">
+      {/* Current Template Styles Section */}
+      <div className="mb-6 p-4 border border-gray-200 rounded bg-gray-50">
+        <h3 className="text-lg font-semibold mb-4">Current Template Styles</h3>
+        <div className="mb-6">
           {styles.map((style) => (
-            <li key={style.id} className="flex justify-between items-center mb-2">
-              <span>{style.name}</span>
-              <button
-                onClick={() => handleDeleteStyle(style.id)}
-                className="text-sm px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-              >
-                Delete
-              </button>
-            </li>
+            <div
+              key={style.id}
+              className="flex justify-between items-center mb-2"
+            >
+              <span className="font-medium">{style.name}</span>
+              <div className="flex gap-2">
+                <button
+                  className="text-sm px-3 py-1 bg-yellow-400 hover:bg-yellow-500 text-white rounded"
+                  // Placeholder edit handler
+                  onClick={() => alert(`Edit style: ${style.name}`)}
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteStyle(style.id)}
+                  className="text-sm px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
           ))}
-        </ul>
+        </div>
 
-        <label className="block mb-2 font-medium">Add Template Style</label>
-        <input
-          type="text"
-          placeholder="e.g. Cars, Tools"
-          value={newStyleName}
-          onChange={(e) => setNewStyleName(e.target.value)}
-          className="p-2 border rounded w-full mb-2"
-        />
-        <button onClick={handleAddStyle} className="bg-blue-600 text-white px-4 py-2 rounded">
-          Add Style
-        </button>
+        <div className="mt-6">
+          <label className="block mb-2 font-medium">Add Template Style</label>
+          <div className="flex gap-4">
+            <input
+              type="text"
+              placeholder="e.g. Cars, Tools"
+              value={newStyleName}
+              onChange={(e) => setNewStyleName(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+            />
+            <button
+              onClick={handleAddStyle}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow-sm"
+            >
+              Add Style
+            </button>
+          </div>
+        </div>
       </div>
 
-      <div className="mb-6">
-        <div>
-          <label className="block mb-2 font-medium">Add Library Item</label>
+      {/* Add Library Item Section */}
+      <div className="mb-6 p-4 border border-gray-200 rounded bg-gray-50">
+        <label className="block mb-2 font-medium">Add Library Item</label>
+        <div className="flex flex-col gap-4">
           <select
             value={selectedStyle}
             onChange={e => setSelectedStyle(e.target.value)}
-            className="p-2 border rounded w-full mb-2"
+            className="w-full p-2 border border-gray-300 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
           >
             <option value="">-- Select Style --</option>
             {styles.map(style => (
@@ -115,13 +135,13 @@ export default function AdminPanel() {
             placeholder="e.g. 🌸 Wrench"
             value={itemName}
             onChange={e => setItemName(e.target.value)}
-            className="p-2 border rounded w-full mb-2"
+            className="w-full p-2 border border-gray-300 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
           />
           <input
             type="file"
             accept="image/*"
             onChange={handleFileChange}
-            className="mb-2"
+            className="w-full mb-2"
           />
           {itemFile && (
             <div className="mb-2">
@@ -130,7 +150,7 @@ export default function AdminPanel() {
           )}
           <button
             onClick={handleAddItem}
-            className="bg-green-600 text-white px-4 py-2 rounded"
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow-sm"
           >
             Add Item
           </button>
