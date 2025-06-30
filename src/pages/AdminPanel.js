@@ -460,54 +460,48 @@ export default function AdminPanel() {
                   </td>
                   <td className="border px-2 py-1">
                     {editingItemId === item.id ? (
-                      <>
-                        <div className="mb-2">
-                          <label className="block text-sm font-medium text-gray-700">Short Description (EN)</label>
-                          <input
+                      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                        <label>
+                          <strong>Short Description (EN):</strong>
+                          <textarea
+                            style={{ minWidth: "200px", minHeight: "40px" }}
                             value={shortDescEN}
                             onChange={(e) => setShortDescEN(e.target.value)}
-                            placeholder="English"
-                            className="w-full border p-1"
                           />
-                        </div>
-                        <div className="mb-2">
-                          <label className="block text-sm font-medium text-gray-700">Short Description (ES)</label>
-                          <input
+                        </label>
+                        <label>
+                          <strong>Short Description (ES):</strong>
+                          <textarea
+                            style={{ minWidth: "200px", minHeight: "40px" }}
                             value={shortDescES}
                             onChange={(e) => setShortDescES(e.target.value)}
-                            placeholder="Español"
-                            className="w-full border p-1"
                           />
-                        </div>
-                      </>
+                        </label>
+                      </div>
                     ) : (
                       `${item.shortDescription?.en || ""} / ${item.shortDescription?.es || ""}`
                     )}
                   </td>
                   <td className="border px-2 py-1 max-w-xs break-words">
                     {editingItemId === item.id ? (
-                      <>
-                        <div className="mb-2">
-                          <label className="block text-sm font-medium text-gray-700">Long Description (EN)</label>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                        <label>
+                          <strong>Long Description (EN):</strong>
                           <textarea
-                            rows={3}
+                            style={{ minWidth: "200px", minHeight: "60px" }}
                             value={longDescEN}
                             onChange={(e) => setLongDescEN(e.target.value)}
-                            placeholder="English"
-                            className="w-full border p-1"
                           />
-                        </div>
-                        <div className="mb-2">
-                          <label className="block text-sm font-medium text-gray-700">Long Description (ES)</label>
+                        </label>
+                        <label>
+                          <strong>Long Description (ES):</strong>
                           <textarea
-                            rows={3}
+                            style={{ minWidth: "200px", minHeight: "60px" }}
                             value={longDescES}
                             onChange={(e) => setLongDescES(e.target.value)}
-                            placeholder="Español"
-                            className="w-full border p-1"
                           />
-                        </div>
-                      </>
+                        </label>
+                      </div>
                     ) : (
                       `${item.longDescription?.en || ""} / ${item.longDescription?.es || ""}`
                     )}
