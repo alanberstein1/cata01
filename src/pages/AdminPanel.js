@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { db } from "../firebase";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { storage } from "../firebase";
+import { db, storage } from "../firebase";
+import { ref, uploadBytes, getDownloadURL, listAll } from "firebase/storage";
 import {
   collection,
   addDoc,
@@ -89,7 +88,7 @@ export default function AdminPanel() {
     setItemFile(e.target.files[0]);
   };
 
-  // Add or update library item
+  // Add or update library item (revised: image upload, duplicate check, multi-lang)
   const handleItemFormSubmit = async (e) => {
     e.preventDefault();
     // Validate required fields
@@ -103,23 +102,44 @@ export default function AdminPanel() {
       return;
     }
     setUploading(true);
-    let imageURL = itemForm.imageURL;
-    // Upload file if new file selected
-    if (itemFile) {
-      const storageRef = ref(
-        storage,
-        `library-items/${Date.now()}_${itemFile.name}`
-      );
-      await uploadBytes(storageRef, itemFile);
-      imageURL = await getDownloadURL(storageRef);
-    }
-    const itemData = {
-      imageURL,
-      shortDesc: descriptions.shortDesc,
-      longDesc: descriptions.longDesc,
-      templateStyleIds: itemForm.templateStyleIds,
-    };
     try {
+      let imageURL = itemForm.imageURL;
+      // Only check/upload if adding new or changing file
+      if (!editingItemId || itemFile) {
+        if (!itemFile) {
+          alert("Please select an image file.");
+          setUploading(false);
+          return;
+        }
+        const folderPath = "Library Items";
+        const storageRef = ref(storage, `${folderPath}/${itemFile.name}`);
+        // Check for duplicate
+        const listRef = ref(storage, folderPath);
+        const listResult = await listAll(listRef);
+        const exists = listResult.items.some(item => item.name === itemFile.name);
+        if (exists) {
+          alert("Image already exists in Firebase Storage.");
+          setUploading(false);
+          return;
+        }
+        // Upload
+        await uploadBytes(storageRef, itemFile);
+        imageURL = await getDownloadURL(storageRef);
+      }
+      // Save metadata to Firestore
+      const itemData = {
+        imageURL,
+        shortDesc: {
+          en: descriptions.shortDesc.en,
+          es: descriptions.shortDesc.es,
+        },
+        longDesc: {
+          en: descriptions.longDesc.en,
+          es: descriptions.longDesc.es,
+        },
+        templateStyleIds: itemForm.templateStyleIds,
+        createdAt: new Date().toISOString(),
+      };
       if (editingItemId) {
         // Update
         await updateDoc(doc(db, "libraryItems", editingItemId), itemData);
@@ -128,6 +148,7 @@ export default function AdminPanel() {
         // Add new
         await addDoc(collection(db, "libraryItems"), itemData);
       }
+      alert("Library item saved!");
       setItemForm({
         imageURL: "",
         templateStyleIds: [],
@@ -139,10 +160,11 @@ export default function AdminPanel() {
       setItemFile(null);
       fetchLibraryItems();
     } catch (error) {
-      alert("Error saving library item.");
-      console.error(error);
+      console.error("Upload failed:", error);
+      alert("Failed to save. Check console for details.");
+    } finally {
+      setUploading(false);
     }
-    setUploading(false);
   };
 
   // Edit library item
