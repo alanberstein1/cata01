@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { db } from "./firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, addDoc } from "firebase/firestore";
 
 const FamilyTemplateBuilder = () => {
   const [step, setStep] = useState(1);
   const [selectedStyle, setSelectedStyle] = useState(null);
   const [numMembers, setNumMembers] = useState(1);
   const [availableStyles, setAvailableStyles] = useState([]);
+  const [members, setMembers] = useState([]);
 
   useEffect(() => {
     const fetchStyles = async () => {
@@ -17,7 +18,25 @@ const FamilyTemplateBuilder = () => {
     fetchStyles();
   }, []);
 
-  // ...rest of your logic (members, handleChange, saveTemplate, etc.)
+  const handleChange = (e, index, field) => {
+    const updated = [...members];
+    updated[index][field] = e.target.value;
+    setMembers(updated);
+  };
+
+  const saveTemplate = async () => {
+    try {
+      await addDoc(collection(db, "family_templates"), {
+        createdAt: new Date().toISOString(),
+        style: selectedStyle?.id,
+        members,
+      });
+      alert("Family template saved!");
+    } catch (error) {
+      console.error("Error saving template:", error);
+      alert("Failed to save template.");
+    }
+  };
 
   return (
     <div className="p-4 border rounded shadow-sm bg-white">
@@ -79,18 +98,18 @@ const FamilyTemplateBuilder = () => {
         <div>
           <label className="block mb-2 font-medium">Step 3: Enter Family Member Info</label>
           {members.map((member, index) => (
-            <div key={index} className="flex gap-2 mb-4">
+            <div key={index} className="flex gap-2 mb-4 items-center">
               <input
                 type="text"
                 placeholder="Name"
                 value={member.name}
                 onChange={(e) => handleChange(e, index, "name")}
-                className="p-2 border border-gray-300 rounded w-full"
+                className="p-2 border border-gray-300 rounded w-1/2"
               />
               <select
                 value={member.libraryItem}
                 onChange={(e) => handleChange(e, index, "libraryItem")}
-                className="p-2 border border-gray-300 rounded w-full"
+                className="p-2 border border-gray-300 rounded w-1/2"
               >
                 <option value="">-- Select Library Item --</option>
                 {selectedStyle?.libraryItems?.map(item => (
