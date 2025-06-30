@@ -447,27 +447,24 @@ export default function AdminPanel() {
               {libraryItems.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50 editable-row">
                   {/* IMAGE CELL */}
-                  <td className="border px-1 py-1 align-top">
+                  <td className="border px-1 py-1 align-top" style={{ width: "80px", minWidth: 56 }}>
                     {editingItemId === item.id ? (
-                      <div className="flex flex-col items-center" style={{ minWidth: 56 }}>
-                        <div className="flex items-center mb-1">
-                          {currentImageURL && (
-                            <img src={currentImageURL} alt="Current"
-                              className="editable-row-img"
-                            />
-                          )}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 56 }}>
+                        {currentImageURL && (
+                          <img src={currentImageURL} alt="Current" className="editable-row-img" />
+                        )}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 4 }}>
                           <input
                             type="file"
                             onChange={handleFileChange}
-                            className="ml-2 editable-row-file"
-                            style={{ marginLeft: currentImageURL ? 12 : 0 }}
+                            className="editable-row-file"
                           />
+                          {currentImageURL && (
+                            <div className="text-xs text-gray-500 mt-1" style={{ fontSize: "11px" }}>
+                              Current
+                            </div>
+                          )}
                         </div>
-                        {currentImageURL && (
-                          <div className="text-xs text-gray-500 mt-1" style={{ fontSize: "11px" }}>
-                            Current
-                          </div>
-                        )}
                       </div>
                     ) : (
                       <div className="flex items-center justify-center" style={{ minHeight: 40, minWidth: 40 }}>
@@ -482,9 +479,9 @@ export default function AdminPanel() {
                   {/* SHORT DESCRIPTION CELL */}
                   <td className="border px-2 py-1 align-top" style={{ verticalAlign: "top" }}>
                     {editingItemId === item.id ? (
-                      <div className="flex flex-col gap-2">
-                        <div className="flex flex-col mb-1">
-                          <label className="editable-row-label mb-1" htmlFor={`short-en-${item.id}`}>Short Description (EN)</label>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span style={{ fontWeight: 'bold', fontSize: 13, color: '#374151' }}>(EN)</span>
                           <input
                             id={`short-en-${item.id}`}
                             className="editable-row-input"
@@ -493,8 +490,8 @@ export default function AdminPanel() {
                             onChange={(e) => setShortDescEN(e.target.value)}
                           />
                         </div>
-                        <div className="flex flex-col">
-                          <label className="editable-row-label mb-1" htmlFor={`short-es-${item.id}`}>Short Description (ES)</label>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span style={{ fontWeight: 'bold', fontSize: 13, color: '#374151' }}>(ES)</span>
                           <input
                             id={`short-es-${item.id}`}
                             className="editable-row-input"
@@ -516,23 +513,25 @@ export default function AdminPanel() {
                   {/* LONG DESCRIPTION CELL */}
                   <td className="border px-2 py-1 align-top" style={{ verticalAlign: "top" }}>
                     {editingItemId === item.id ? (
-                      <div className="flex flex-col gap-2">
-                        <div className="flex flex-col mb-1">
-                          <label className="editable-row-label mb-1" htmlFor={`long-en-${item.id}`}>Long Description (EN)</label>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span style={{ fontWeight: 'bold', fontSize: 13, color: '#374151' }}>(EN)</span>
                           <textarea
                             id={`long-en-${item.id}`}
                             className="editable-row-textarea"
-                            style={{ maxWidth: 300, minHeight: 48, resize: "vertical" }}
+                            style={{ maxWidth: 300, resize: "vertical" }}
+                            rows={2}
                             value={longDescEN}
                             onChange={(e) => setLongDescEN(e.target.value)}
                           />
                         </div>
-                        <div className="flex flex-col">
-                          <label className="editable-row-label mb-1" htmlFor={`long-es-${item.id}`}>Long Description (ES)</label>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span style={{ fontWeight: 'bold', fontSize: 13, color: '#374151' }}>(ES)</span>
                           <textarea
                             id={`long-es-${item.id}`}
                             className="editable-row-textarea"
-                            style={{ maxWidth: 300, minHeight: 48, resize: "vertical" }}
+                            style={{ maxWidth: 300, resize: "vertical" }}
+                            rows={2}
                             value={longDescES}
                             onChange={(e) => setLongDescES(e.target.value)}
                           />
@@ -576,12 +575,12 @@ export default function AdminPanel() {
                   </td>
                   {/* ACTIONS CELL */}
                   <td className="border px-2 py-1 align-top" style={{ verticalAlign: "top", minWidth: 120 }}>
-                    <div className="flex flex-col h-full justify-end items-start gap-2" style={{ minHeight: 56 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", minHeight: 56, justifyContent: "flex-end", alignItems: "start" }}>
                       {editingItemId === item.id ? (
-                        <div className="flex flex-col gap-2">
+                        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                           <button
                             onClick={handleUpdateItem}
-                            className="bg-green-600 text-white px-2 py-1 rounded mb-1"
+                            className="bg-green-600 text-white px-2 py-1 rounded"
                           >
                             Update
                           </button>
@@ -593,10 +592,10 @@ export default function AdminPanel() {
                           </button>
                         </div>
                       ) : (
-                        <div className="flex flex-col gap-2">
+                        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                           <button
                             onClick={() => handleEditItem(item)}
-                            className="bg-yellow-500 text-white px-2 py-1 rounded mb-1"
+                            className="bg-yellow-500 text-white px-2 py-1 rounded"
                           >
                             Edit
                           </button>
