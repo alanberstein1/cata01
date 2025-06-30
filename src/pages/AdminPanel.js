@@ -188,7 +188,7 @@ export default function AdminPanel() {
   };
 
   // Cancel editing a library item
-  const handleCancelEditItem = () => {
+  const handleCancelEdit = () => {
     setEditingItemId(null);
     setEditFile(null);
     setEditShortDescEN("");
@@ -346,6 +346,7 @@ export default function AdminPanel() {
               accept="image/*"
               onChange={handleFileChange}
               className="w-full mb-2"
+              disabled={editingItemId !== null}
             />
             {file && (
               <div className="mb-2">
@@ -360,12 +361,14 @@ export default function AdminPanel() {
               placeholder="English"
               value={shortDescEN}
               onChange={e => setShortDescEN(e.target.value)}
+              disabled={editingItemId !== null}
             />
             <input
               className="w-full border p-2"
               placeholder="Español"
               value={shortDescES}
               onChange={e => setShortDescES(e.target.value)}
+              disabled={editingItemId !== null}
             />
           </div>
           <div className="mb-4">
@@ -375,12 +378,14 @@ export default function AdminPanel() {
               placeholder="English"
               value={longDescEN}
               onChange={e => setLongDescEN(e.target.value)}
+              disabled={editingItemId !== null}
             />
             <textarea
               className="w-full border p-2"
               placeholder="Español"
               value={longDescES}
               onChange={e => setLongDescES(e.target.value)}
+              disabled={editingItemId !== null}
             />
           </div>
           <div>
@@ -391,6 +396,7 @@ export default function AdminPanel() {
               onChange={handleMultiSelect}
               className="w-full p-2 border border-gray-300 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
               required
+              disabled={editingItemId !== null}
             >
               {styles.map(style => (
                 <option key={style.id} value={style.id}>
@@ -406,7 +412,7 @@ export default function AdminPanel() {
             <button
               type="button"
               className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow-sm"
-              disabled={saving}
+              disabled={saving || editingItemId !== null}
               onClick={handleSaveLibraryItem}
             >
               {saving ? "Saving..." : "Add Item"}
@@ -565,7 +571,7 @@ export default function AdminPanel() {
                           </button>
                           <button
                             className="bg-gray-400 text-white px-4 py-2 rounded"
-                            onClick={handleCancelEditItem}
+                            onClick={handleCancelEdit}
                           >
                             Cancel
                           </button>
