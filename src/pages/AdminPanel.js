@@ -29,6 +29,15 @@ export default function AdminPanel() {
   const [selectedStyleIds, setSelectedStyleIds] = useState([]);
   const [saving, setSaving] = useState(false);
   const [libraryItems, setLibraryItems] = useState([]);
+  // Edit state for library items
+  const [editingItemId, setEditingItemId] = useState(null);
+  const [editForm, setEditForm] = useState({
+    shortDesc: { en: "", es: "" },
+    longDesc: { en: "", es: "" },
+    associatedStyles: [],
+    file: null,
+    imageUrl: "",
+  });
   // Handler for multi-select
   const handleMultiSelect = (e) => {
     const options = Array.from(e.target.selectedOptions).map((o) => o.value);
@@ -161,12 +170,61 @@ export default function AdminPanel() {
 
   // Edit library item
   const handleEditItem = (item) => {
-    setShortDescEN(item.shortDescription?.en || "");
-    setShortDescES(item.shortDescription?.es || "");
-    setLongDescEN(item.longDescription?.en || "");
-    setLongDescES(item.longDescription?.es || "");
-    setSelectedStyleIds(item.associatedStyles || []);
-    setFile(null);
+    setEditingItemId(item.id);
+    setEditForm({
+      shortDesc: item.shortDescription || { en: "", es: "" },
+      longDesc: item.longDescription || { en: "", es: "" },
+      associatedStyles: item.associatedStyles || [],
+      file: null,
+      imageUrl: item.imageUrl || "",
+    });
+  };
+
+  // Update library item
+  const handleUpdateLibraryItem = async () => {
+    if (
+      !editForm.shortDesc.en ||
+      !editForm.shortDesc.es ||
+      !editForm.longDesc.en ||
+      !editForm.longDesc.es ||
+      editForm.associatedStyles.length === 0
+    ) {
+      alert("Please fill all fields.");
+      return;
+    }
+
+    setSaving(true);
+    let newImageUrl = editForm.imageUrl;
+
+    try {
+      if (editForm.file) {
+        const storageRef = ref(storage, `Library Items/${editForm.file.name}`);
+        const uploadTask = uploadBytesResumable(storageRef, editForm.file);
+        await new Promise((resolve, reject) => {
+          uploadTask.on("state_changed", null, reject, async () => {
+            newImageUrl = await getDownloadURL(uploadTask.snapshot.ref);
+            resolve();
+          });
+        });
+      }
+
+      const docRef = doc(db, "libraryItems", editingItemId);
+      await updateDoc(docRef, {
+        imageUrl: newImageUrl,
+        shortDescription: editForm.shortDesc,
+        longDescription: editForm.longDesc,
+        associatedStyles: editForm.associatedStyles,
+      });
+
+      alert("Item updated!");
+      setEditingItemId(null);
+      setSaving(false);
+      fetchLibraryItems();
+    } catch (err) {
+      console.error("Update error:", err);
+      alert("Failed to update item.");
+      setSaving(false);
+    }
   };
 
   // Delete library item
@@ -362,47 +420,100 @@ export default function AdminPanel() {
                 </tr>
               )}
               {libraryItems.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50">
-                  <td className="border px-2 py-1">
-                    <img
-                      src={item.imageUrl}
-                      alt="Library"
-                      className="w-14 h-14 object-cover rounded border"
-                    />
-                  </td>
-                  <td className="border px-2 py-1">
-                    {item.shortDescription
-                      ? `${item.shortDescription.en || ""}${item.shortDescription.es ? " / " + item.shortDescription.es : ""}`
-                      : ""}
-                  </td>
-                  <td className="border px-2 py-1 max-w-xs break-words">
-                    {item.longDescription
-                      ? `${item.longDescription.en || ""}${item.longDescription.es ? " / " + item.longDescription.es : ""}`
-                      : ""}
-                  </td>
-                  <td className="border px-2 py-1">
-                    {(item.associatedStyles || [])
-                      .map(
-                        (sid) =>
-                          styles.find((s) => s.id === sid)?.name || sid
-                      )
-                      .join(", ")}
-                  </td>
-                  <td className="border px-2 py-1">
-                    <button
-                      className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
-                      onClick={() => handleEditItem(item)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="bg-red-600 text-white px-2 py-1 rounded"
-                      onClick={() => handleDeleteItem(item.id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
+                editingItemId === item.id ? (
+                  <tr key={item.id} className="bg-yellow-50">
+                    <td className="border px-2 py-1">
+                      {editForm.file ? (
+                        <span>{editForm.file.name}</span>
+                      ) : (
+                        <img src={editForm.imageUrl} alt="Preview" className="w-14 h-14 object-cover" />
+                      )}
+                      <input type="file" onChange={(e) => setEditForm(prev => ({ ...prev, file: e.target.files[0] }))} />
+                    </td>
+                    <td className="border px-2 py-1">
+                      <input
+                        value={editForm.shortDesc.en}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, shortDesc: { ...prev.shortDesc, en: e.target.value } }))}
+                        placeholder="EN"
+                        className="w-full border p-1 mb-1"
+                      />
+                      <input
+                        value={editForm.shortDesc.es}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, shortDesc: { ...prev.shortDesc, es: e.target.value } }))}
+                        placeholder="ES"
+                        className="w-full border p-1"
+                      />
+                    </td>
+                    <td className="border px-2 py-1">
+                      <textarea
+                        value={editForm.longDesc.en}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, longDesc: { ...prev.longDesc, en: e.target.value } }))}
+                        placeholder="EN"
+                        className="w-full border p-1 mb-1"
+                      />
+                      <textarea
+                        value={editForm.longDesc.es}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, longDesc: { ...prev.longDesc, es: e.target.value } }))}
+                        placeholder="ES"
+                        className="w-full border p-1"
+                      />
+                    </td>
+                    <td className="border px-2 py-1">
+                      <select
+                        multiple
+                        value={editForm.associatedStyles}
+                        onChange={(e) =>
+                          setEditForm(prev => ({
+                            ...prev,
+                            associatedStyles: Array.from(e.target.selectedOptions).map(opt => opt.value)
+                          }))
+                        }
+                        className="w-full border p-1"
+                      >
+                        {styles.map(style => (
+                          <option key={style.id} value={style.id}>{style.name}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="border px-2 py-1">
+                      <button onClick={handleUpdateLibraryItem} className="bg-green-600 text-white px-2 py-1 rounded mr-2">Save</button>
+                      <button onClick={() => setEditingItemId(null)} className="bg-gray-400 text-white px-2 py-1 rounded">Cancel</button>
+                    </td>
+                  </tr>
+                ) : (
+                  <tr key={item.id} className="hover:bg-gray-50">
+                    <td className="border px-2 py-1">
+                      <img
+                        src={item.imageUrl}
+                        alt="Library"
+                        className="w-14 h-14 object-cover rounded border"
+                      />
+                    </td>
+                    <td className="border px-2 py-1">
+                      {item.shortDescription?.en} / {item.shortDescription?.es}
+                    </td>
+                    <td className="border px-2 py-1 max-w-xs break-words">
+                      {item.longDescription?.en} / {item.longDescription?.es}
+                    </td>
+                    <td className="border px-2 py-1">
+                      {(item.associatedStyles || []).map(id => styles.find(s => s.id === id)?.name).join(", ")}
+                    </td>
+                    <td className="border px-2 py-1">
+                      <button
+                        className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
+                        onClick={() => handleEditItem(item)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="bg-red-600 text-white px-2 py-1 rounded"
+                        onClick={() => handleDeleteItem(item.id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                )
               ))}
             </tbody>
           </table>
