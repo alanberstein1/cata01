@@ -8,7 +8,6 @@ import {
   doc,
   deleteDoc,
   updateDoc,
-  getDoc,
   serverTimestamp,
 } from "firebase/firestore";
 
@@ -20,7 +19,7 @@ export default function AdminPanel() {
   const [editingStyleId, setEditingStyleId] = useState(null);
   const [editedStyleName, setEditedStyleName] = useState("");
 
-  // Library items state (for new logic)
+  // Library items state
   const [file, setFile] = useState(null);
   const [shortDescEN, setShortDescEN] = useState("");
   const [shortDescES, setShortDescES] = useState("");
@@ -29,20 +28,16 @@ export default function AdminPanel() {
   const [selectedStyleIds, setSelectedStyleIds] = useState([]);
   const [saving, setSaving] = useState(false);
   const [libraryItems, setLibraryItems] = useState([]);
-  // Edit state for library items (new logic, local per row)
+
+  // Inline edit states for library items
   const [editingItemId, setEditingItemId] = useState(null);
-  const [editedShortDescEN, setEditedShortDescEN] = useState("");
-  const [editedShortDescES, setEditedShortDescES] = useState("");
-  const [editedLongDescEN, setEditedLongDescEN] = useState("");
-  const [editedLongDescES, setEditedLongDescES] = useState("");
-  const [editedStyleIds, setEditedStyleIds] = useState([]);
-  const [editedImageFile, setEditedImageFile] = useState(null);
-  const [editedImageUrl, setEditedImageUrl] = useState("");
-  // Handler for multi-select
-  const handleMultiSelect = (e) => {
-    const options = Array.from(e.target.selectedOptions).map((o) => o.value);
-    setSelectedStyleIds(options);
-  };
+  const [editFile, setEditFile] = useState(null);
+  const [editShortDescEN, setEditShortDescEN] = useState("");
+  const [editShortDescES, setEditShortDescES] = useState("");
+  const [editLongDescEN, setEditLongDescEN] = useState("");
+  const [editLongDescES, setEditLongDescES] = useState("");
+  const [editSelectedStyleIds, setEditSelectedStyleIds] = useState([]);
+  const [editImageUrl, setEditImageUrl] = useState("");
 
   // Fetch template styles from Firestore
   const fetchStyles = async () => {
@@ -168,38 +163,50 @@ export default function AdminPanel() {
     }
   };
 
-  // Start editing a library item, initialize local edit state
-  const startEditingItem = (item) => {
-    setEditingItemId(item.id);
-    setEditedShortDescEN(item.shortDescription?.en || "");
-    setEditedShortDescES(item.shortDescription?.es || "");
-    setEditedLongDescEN(item.longDescription?.en || "");
-    setEditedLongDescES(item.longDescription?.es || "");
-    setEditedStyleIds(item.associatedStyles || []);
-    setEditedImageFile(null);
-    setEditedImageUrl(item.imageUrl || "");
+  // Handler for multi-select in add form
+  const handleMultiSelect = (e) => {
+    const options = Array.from(e.target.selectedOptions).map((o) => o.value);
+    setSelectedStyleIds(options);
   };
 
-  // Cancel editing
+  // Handler for multi-select in edit form
+  const handleEditMultiSelect = (e) => {
+    const options = Array.from(e.target.selectedOptions).map((o) => o.value);
+    setEditSelectedStyleIds(options);
+  };
+
+  // When "Edit" is clicked for a library item
+  const handleEditItem = (item) => {
+    setEditingItemId(item.id);
+    setEditFile(null);
+    setEditShortDescEN(item.shortDescription?.en || "");
+    setEditShortDescES(item.shortDescription?.es || "");
+    setEditLongDescEN(item.longDescription?.en || "");
+    setEditLongDescES(item.longDescription?.es || "");
+    setEditSelectedStyleIds(item.associatedStyles || []);
+    setEditImageUrl(item.imageUrl || "");
+  };
+
+  // Cancel editing a library item
   const handleCancelEditItem = () => {
     setEditingItemId(null);
-    setEditedShortDescEN("");
-    setEditedShortDescES("");
-    setEditedLongDescEN("");
-    setEditedLongDescES("");
-    setEditedStyleIds([]);
-    setEditedImageFile(null);
-    setEditedImageUrl("");
+    setEditFile(null);
+    setEditShortDescEN("");
+    setEditShortDescES("");
+    setEditLongDescEN("");
+    setEditLongDescES("");
+    setEditSelectedStyleIds([]);
+    setEditImageUrl("");
   };
 
-  // Handle update (with optional image upload)
-  const handleUpdateItem = async (itemId) => {
+  // Update library item (with optional image upload)
+  const handleUpdateLibraryItem = async () => {
     try {
-      let imageUrl = editedImageUrl;
-      if (editedImageFile) {
+      let imageUrl = editImageUrl;
+      if (editFile) {
         // Upload new image
-        const storageRef = ref(storage, `Library Items/${editedImageFile.name}`);
-        const uploadTask = uploadBytesResumable(storageRef, editedImageFile);
+        const storageRef = ref(storage, `Library Items/${editFile.name}`);
+        const uploadTask = uploadBytesResumable(storageRef, editFile);
         await new Promise((resolve, reject) => {
           uploadTask.on(
             "state_changed",
@@ -212,27 +219,27 @@ export default function AdminPanel() {
           );
         });
       }
-      const docRef = doc(db, "libraryItems", itemId);
+      const docRef = doc(db, "libraryItems", editingItemId);
       await updateDoc(docRef, {
         shortDescription: {
-          en: editedShortDescEN,
-          es: editedShortDescES,
+          en: editShortDescEN,
+          es: editShortDescES,
         },
         longDescription: {
-          en: editedLongDescEN,
-          es: editedLongDescES,
+          en: editLongDescEN,
+          es: editLongDescES,
         },
-        associatedStyles: editedStyleIds,
-        ...(editedImageFile ? { imageUrl } : {}),
+        associatedStyles: editSelectedStyleIds,
+        ...(editFile ? { imageUrl } : {}),
       });
       setEditingItemId(null);
-      setEditedShortDescEN("");
-      setEditedShortDescES("");
-      setEditedLongDescEN("");
-      setEditedLongDescES("");
-      setEditedStyleIds([]);
-      setEditedImageFile(null);
-      setEditedImageUrl("");
+      setEditFile(null);
+      setEditShortDescEN("");
+      setEditShortDescES("");
+      setEditLongDescEN("");
+      setEditLongDescES("");
+      setEditSelectedStyleIds([]);
+      setEditImageUrl("");
       fetchLibraryItems();
       alert("Library item updated!");
     } catch (err) {
@@ -435,115 +442,134 @@ export default function AdminPanel() {
               )}
               {libraryItems.map((item) => (
                 <React.Fragment key={item.id}>
-                  {editingItemId === item.id ? (
-                    <tr className="bg-gray-100">
-                      {/* Inline editable fields */}
-                      <td className="border px-2 py-1">
-                        <div>
-                          <img
-                            src={editedImageFile ? URL.createObjectURL(editedImageFile) : editedImageUrl}
-                            alt="Preview"
-                            className="w-14 h-14 object-cover rounded border mb-2"
-                          />
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={e => {
-                              if (e.target.files && e.target.files[0]) {
-                                setEditedImageFile(e.target.files[0]);
-                              }
-                            }}
-                          />
+                  <tr className={editingItemId === item.id ? "bg-yellow-50" : "hover:bg-gray-50"}>
+                    <td className="border px-2 py-1">
+                      <img
+                        src={item.imageUrl}
+                        alt="Library"
+                        className="w-14 h-14 object-cover rounded border"
+                      />
+                    </td>
+                    <td className="border px-2 py-1">
+                      {item.shortDescription?.en} / {item.shortDescription?.es}
+                    </td>
+                    <td className="border px-2 py-1 max-w-xs break-words">
+                      {item.longDescription?.en} / {item.longDescription?.es}
+                    </td>
+                    <td className="border px-2 py-1">
+                      {(item.associatedStyles || []).map(id => styles.find(s => s.id === id)?.name).join(", ")}
+                    </td>
+                    <td className="border px-2 py-1">
+                      <button
+                        className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
+                        onClick={() => handleEditItem(item)}
+                        disabled={editingItemId !== null}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="bg-red-600 text-white px-2 py-1 rounded"
+                        onClick={() => handleDeleteItem(item.id)}
+                        disabled={editingItemId !== null}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                  {editingItemId === item.id && (
+                    <tr className="bg-yellow-50">
+                      <td colSpan={5}>
+                        <div className="flex flex-col md:flex-row gap-4">
+                          {/* Image */}
+                          <div className="flex flex-col items-start">
+                            <label className="font-medium mb-1">Image</label>
+                            {editFile ? (
+                              <img
+                                src={URL.createObjectURL(editFile)}
+                                alt="Preview"
+                                className="w-14 h-14 object-cover rounded border mb-2"
+                              />
+                            ) : (
+                              editImageUrl && (
+                                <img
+                                  src={editImageUrl}
+                                  alt="Preview"
+                                  className="w-14 h-14 object-cover rounded border mb-2"
+                                />
+                              )
+                            )}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={e => {
+                                if (e.target.files && e.target.files[0]) {
+                                  setEditFile(e.target.files[0]);
+                                }
+                              }}
+                              className="mb-2"
+                            />
+                          </div>
+                          {/* Descriptions */}
+                          <div className="flex-1 flex flex-col gap-2">
+                            <label className="font-medium">Short Description</label>
+                            <input
+                              className="w-full border p-1 mb-1"
+                              placeholder="English"
+                              value={editShortDescEN}
+                              onChange={e => setEditShortDescEN(e.target.value)}
+                            />
+                            <input
+                              className="w-full border p-1"
+                              placeholder="Español"
+                              value={editShortDescES}
+                              onChange={e => setEditShortDescES(e.target.value)}
+                            />
+                            <label className="font-medium mt-2">Long Description</label>
+                            <textarea
+                              className="w-full border p-1 mb-1"
+                              placeholder="English"
+                              value={editLongDescEN}
+                              onChange={e => setEditLongDescEN(e.target.value)}
+                            />
+                            <textarea
+                              className="w-full border p-1"
+                              placeholder="Español"
+                              value={editLongDescES}
+                              onChange={e => setEditLongDescES(e.target.value)}
+                            />
+                          </div>
+                          {/* Styles */}
+                          <div className="flex flex-col">
+                            <label className="font-medium mb-1">Associate Styles</label>
+                            <select
+                              multiple
+                              className="w-full p-1 border rounded"
+                              value={editSelectedStyleIds}
+                              onChange={handleEditMultiSelect}
+                            >
+                              {styles.map(style => (
+                                <option key={style.id} value={style.id}>{style.name}</option>
+                              ))}
+                            </select>
+                            <div className="text-xs text-gray-500 mt-1">
+                              Hold Ctrl (Windows) or Cmd (Mac) to select multiple.
+                            </div>
+                          </div>
                         </div>
-                      </td>
-                      <td className="border px-2 py-1">
-                        <input
-                          className="w-full border p-1 mb-1"
-                          placeholder="English"
-                          value={editedShortDescEN}
-                          onChange={e => setEditedShortDescEN(e.target.value)}
-                        />
-                        <input
-                          className="w-full border p-1"
-                          placeholder="Español"
-                          value={editedShortDescES}
-                          onChange={e => setEditedShortDescES(e.target.value)}
-                        />
-                      </td>
-                      <td className="border px-2 py-1">
-                        <textarea
-                          className="w-full border p-1 mb-1"
-                          placeholder="English"
-                          value={editedLongDescEN}
-                          onChange={e => setEditedLongDescEN(e.target.value)}
-                        />
-                        <textarea
-                          className="w-full border p-1"
-                          placeholder="Español"
-                          value={editedLongDescES}
-                          onChange={e => setEditedLongDescES(e.target.value)}
-                        />
-                      </td>
-                      <td className="border px-2 py-1">
-                        <select
-                          multiple
-                          className="w-full p-1 border rounded"
-                          value={editedStyleIds}
-                          onChange={e =>
-                            setEditedStyleIds(Array.from(e.target.selectedOptions).map(o => o.value))
-                          }
-                        >
-                          {styles.map(style => (
-                            <option key={style.id} value={style.id}>{style.name}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="border px-2 py-1">
-                        <button
-                          className="bg-green-600 text-white px-2 py-1 rounded mr-2"
-                          onClick={() => handleUpdateItem(item.id)}
-                        >
-                          Update
-                        </button>
-                        <button
-                          className="bg-gray-400 text-white px-2 py-1 rounded"
-                          onClick={handleCancelEditItem}
-                        >
-                          Cancel
-                        </button>
-                      </td>
-                    </tr>
-                  ) : (
-                    <tr className="hover:bg-gray-50">
-                      <td className="border px-2 py-1">
-                        <img
-                          src={item.imageUrl}
-                          alt="Library"
-                          className="w-14 h-14 object-cover rounded border"
-                        />
-                      </td>
-                      <td className="border px-2 py-1">
-                        {item.shortDescription?.en} / {item.shortDescription?.es}
-                      </td>
-                      <td className="border px-2 py-1 max-w-xs break-words">
-                        {item.longDescription?.en} / {item.longDescription?.es}
-                      </td>
-                      <td className="border px-2 py-1">
-                        {(item.associatedStyles || []).map(id => styles.find(s => s.id === id)?.name).join(", ")}
-                      </td>
-                      <td className="border px-2 py-1">
-                        <button
-                          className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
-                          onClick={() => startEditingItem(item)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="bg-red-600 text-white px-2 py-1 rounded"
-                          onClick={() => handleDeleteItem(item.id)}
-                        >
-                          Delete
-                        </button>
+                        <div className="flex gap-2 mt-4">
+                          <button
+                            className="bg-green-600 text-white px-4 py-2 rounded"
+                            onClick={handleUpdateLibraryItem}
+                          >
+                            Update
+                          </button>
+                          <button
+                            className="bg-gray-400 text-white px-4 py-2 rounded"
+                            onClick={handleCancelEditItem}
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )}
