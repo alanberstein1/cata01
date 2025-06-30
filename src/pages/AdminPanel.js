@@ -422,233 +422,172 @@ export default function AdminPanel() {
         </div>
       </div>
 
-      {/* Library Items Table */}
+      {/* Library Items Card-based List */}
       <div className="mb-6 p-4 border border-gray-200 rounded bg-gray-50">
         <h3 className="text-lg font-semibold mb-4">Library Items</h3>
-        <div className="overflow-x-auto">
-          <table className="min-w-full border text-sm">
-            <colgroup>
-              <col style={{ width: "72px" }} /> {/* Image column */}
-              <col style={{ width: "220px" }} />
-              <col style={{ width: "320px" }} />
-              <col />
-              <col style={{ width: "120px" }} />
-            </colgroup>
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border px-1 py-1" style={{ minWidth: 56 }}>Image</th>
-                <th className="border px-2 py-1">Short Description</th>
-                <th className="border px-2 py-1">Long Description</th>
-                <th className="border px-2 py-1">Template Styles</th>
-                <th className="border px-2 py-1">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {libraryItems.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50 editable-row">
-                  {/* IMAGE CELL */}
-                  <td
-                    style={{ verticalAlign: 'top', padding: '10px', width: "80px", minWidth: 56 }}
-                  >
-                    {editingItemId === item.id ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 56 }}>
-                        {item.imageUrl && (
-                          <img
-                            src={item.imageUrl}
-                            alt="Current"
-                            style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #d1d5db', marginBottom: 0 }}
-                          />
-                        )}
-                        <div style={{ marginTop: '5px', width: '100%' }}>
-                          <input
-                            type="file"
-                            onChange={handleFileChange}
-                            style={{ width: '100%' }}
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center" style={{ minHeight: 40, minWidth: 40 }}>
-                        <img
-                          src={item.imageUrl}
-                          alt="Library"
-                          className="editable-row-img"
-                        />
-                      </div>
+        <div className="flex flex-col gap-5">
+          {libraryItems.map((item) => (
+            <div
+              key={item.id}
+              className="flex flex-col sm:flex-row gap-4 p-4 bg-white rounded-lg shadow transition-shadow hover:shadow-lg border border-gray-100"
+              style={{ position: "relative" }}
+            >
+              {/* Left: Image */}
+              <div className="flex-shrink-0 flex items-center justify-center w-[100px] min-w-[100px]">
+                {editingItemId === item.id ? (
+                  <div className="flex flex-col items-center w-full">
+                    {item.imageUrl && (
+                      <img
+                        src={item.imageUrl}
+                        alt="Current"
+                        className="rounded border border-gray-200 object-cover"
+                        style={{ width: 60, height: 60 }}
+                      />
                     )}
-                  </td>
-                  {/* SHORT DESCRIPTION CELL */}
-                  <td
-                    style={{ verticalAlign: 'top', padding: '10px' }}
-                  >
+                    <input
+                      type="file"
+                      onChange={handleFileChange}
+                      className="mt-2 text-xs"
+                    />
+                  </div>
+                ) : (
+                  <img
+                    src={item.imageUrl}
+                    alt="Library"
+                    className="rounded border border-gray-200 object-cover"
+                    style={{ width: 60, height: 60 }}
+                  />
+                )}
+              </div>
+              {/* Right: Content */}
+              <div className="flex-1 flex flex-col min-w-0">
+                <div className="flex flex-col gap-2">
+                  {/* Short Description */}
+                  <div>
+                    <span className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">EN</span>
                     {editingItemId === item.id ? (
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <input
-                          placeholder="EN"
-                          value={shortDescEN}
-                          onChange={e => setShortDescEN(e.target.value)}
-                          style={{ width: '100%', marginBottom: '4px' }}
-                        />
-                        <input
-                          placeholder="ES"
-                          value={shortDescES}
-                          onChange={e => setShortDescES(e.target.value)}
-                          style={{ width: '100%', marginBottom: '4px' }}
-                        />
-                      </div>
+                      <input
+                        placeholder="Short Description (EN)"
+                        value={shortDescEN}
+                        onChange={e => setShortDescEN(e.target.value)}
+                        className="w-full border p-1 rounded mb-1 text-sm"
+                      />
                     ) : (
-                      <div className="whitespace-pre-line break-words" style={{ maxWidth: 300 }}>
-                        <span className="block font-semibold text-xs text-gray-500 mb-0.5">EN:</span>
-                        <span>{item.shortDescription?.en || ""}</span>
-                        <span className="block font-semibold text-xs text-gray-500 mt-1 mb-0.5">ES:</span>
-                        <span>{item.shortDescription?.es || ""}</span>
-                      </div>
+                      <div className="text-gray-900 text-sm">{item.shortDescription?.en || ""}</div>
                     )}
-                  </td>
-                  {/* LONG DESCRIPTION CELL */}
-                  <td
-                    style={{ verticalAlign: 'top', padding: '10px' }}
-                  >
+                    <span className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mt-2 mb-0.5">ES</span>
                     {editingItemId === item.id ? (
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <textarea
-                          placeholder="EN"
-                          value={longDescEN}
-                          onChange={e => setLongDescEN(e.target.value)}
-                          style={{ width: '100%', marginBottom: '4px' }}
-                        />
-                        <textarea
-                          placeholder="ES"
-                          value={longDescES}
-                          onChange={e => setLongDescES(e.target.value)}
-                          style={{ width: '100%', marginBottom: '4px' }}
-                        />
-                      </div>
+                      <input
+                        placeholder="Short Description (ES)"
+                        value={shortDescES}
+                        onChange={e => setShortDescES(e.target.value)}
+                        className="w-full border p-1 rounded text-sm"
+                      />
                     ) : (
-                      <div className="whitespace-pre-line break-words" style={{ maxWidth: 300 }}>
-                        <span className="block font-semibold text-xs text-gray-500 mb-0.5">EN:</span>
-                        <span>{item.longDescription?.en || ""}</span>
-                        <span className="block font-semibold text-xs text-gray-500 mt-1 mb-0.5">ES:</span>
-                        <span>{item.longDescription?.es || ""}</span>
-                      </div>
+                      <div className="text-gray-900 text-sm">{item.shortDescription?.es || ""}</div>
                     )}
-                  </td>
-                  {/* TEMPLATE STYLES CELL */}
-                  <td
-                    style={{ verticalAlign: 'top', padding: '10px' }}
-                  >
+                  </div>
+                  {/* Long Description */}
+                  <div className="mt-2">
+                    <span className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">EN</span>
                     {editingItemId === item.id ? (
-                      <div className="flex items-center h-full" style={{ minHeight: 40 }}>
-                        <select
-                          multiple
-                          value={selectedStyleIds}
-                          onChange={handleMultiSelect}
-                          className="editable-row-select"
-                          size={3}
-                          style={{ maxHeight: '60px', maxWidth: '150px' }}
+                      <textarea
+                        placeholder="Long Description (EN)"
+                        value={longDescEN}
+                        onChange={e => setLongDescEN(e.target.value)}
+                        className="w-full border p-1 rounded mb-1 text-sm"
+                        rows={2}
+                      />
+                    ) : (
+                      <div className="text-gray-700 text-sm whitespace-pre-line">{item.longDescription?.en || ""}</div>
+                    )}
+                    <span className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mt-2 mb-0.5">ES</span>
+                    {editingItemId === item.id ? (
+                      <textarea
+                        placeholder="Long Description (ES)"
+                        value={longDescES}
+                        onChange={e => setLongDescES(e.target.value)}
+                        className="w-full border p-1 rounded text-sm"
+                        rows={2}
+                      />
+                    ) : (
+                      <div className="text-gray-700 text-sm whitespace-pre-line">{item.longDescription?.es || ""}</div>
+                    )}
+                  </div>
+                </div>
+                {/* Template Styles */}
+                <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                  <div className="text-xs text-gray-500 italic mb-2 sm:mb-0">
+                    Template Styles:&nbsp;
+                    {editingItemId === item.id ? (
+                      <select
+                        multiple
+                        value={selectedStyleIds}
+                        onChange={handleMultiSelect}
+                        className="border p-1 rounded text-xs"
+                        style={{ minWidth: 120, maxWidth: 200, maxHeight: 60 }}
+                        size={Math.min(3, styles.length)}
+                      >
+                        {styles.map(style => (
+                          <option key={style.id} value={style.id}>
+                            {style.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      (item.associatedStyles || [])
+                        .map(id => styles.find(s => s.id === id)?.name || id)
+                        .join(", ")
+                    )}
+                  </div>
+                  {/* Edit/Delete Buttons */}
+                  <div className="flex gap-2 mt-2 sm:mt-0 sm:justify-end">
+                    {editingItemId === item.id ? (
+                      <>
+                        <button
+                          onClick={handleUpdateItem}
+                          className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
                         >
-                          {styles.map(style => (
-                            <option key={style.id} value={style.id}>
-                              {style.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                          Update
+                        </button>
+                        <button
+                          onClick={() => setEditingItemId(null)}
+                          className="bg-gray-400 hover:bg-gray-500 text-white px-3 py-1 rounded text-sm"
+                        >
+                          Cancel
+                        </button>
+                      </>
                     ) : (
-                      <div>
-                        {(item.associatedStyles || [])
-                          .map(id => styles.find(s => s.id === id)?.name || id)
-                          .join(", ")}
-                      </div>
+                      <>
+                        <button
+                          onClick={() => handleEditItem(item)}
+                          className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteItem(item.id)}
+                          className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
+                        >
+                          Delete
+                        </button>
+                      </>
                     )}
-                  </td>
-                  {/* ACTIONS CELL */}
-                  <td
-                    style={{ verticalAlign: 'top', padding: '10px', minWidth: 120 }}
-                  >
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", minHeight: 56, justifyContent: "flex-end", alignItems: "start" }}>
-                      {editingItemId === item.id ? (
-                        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                          <button
-                            onClick={handleUpdateItem}
-                            className="bg-green-600 text-white px-2 py-1 rounded"
-                          >
-                            Update
-                          </button>
-                          <button
-                            onClick={() => setEditingItemId(null)}
-                            className="bg-gray-400 text-white px-2 py-1 rounded"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                          <button
-                            onClick={() => handleEditItem(item)}
-                            className="bg-yellow-500 text-white px-2 py-1 rounded"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteItem(item.id)}
-                            className="bg-red-600 text-white px-2 py-1 rounded"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
-        {/* Inline styles for editable row */}
+        {/* Responsive and card styles */}
         <style>{`
-          .editable-row-img {
-            width: 40px;
-            height: 40px;
-            object-fit: cover;
-            border-radius: 6px;
-            border: 1px solid #d1d5db;
-            margin-right: 0;
-            margin-bottom: 0;
-            display: block;
-          }
-          .editable-row-label {
-            font-size: 13px;
-            font-weight: 500;
-            color: #374151;
-            margin-bottom: 2px;
-          }
-          .editable-row-input, .editable-row-textarea, .editable-row-select {
-            width: 100%;
-            border: 1px solid #d1d5db;
-            border-radius: 4px;
-            padding: 6px 10px;
-            font-size: 14px;
-            margin-bottom: 0;
-            margin-top: 0;
-            background: #fff;
-            box-sizing: border-box;
-          }
-          .editable-row-input {
-            min-height: 28px;
-          }
-          .editable-row-textarea {
-            min-height: 48px;
-            resize: vertical;
-            font-family: inherit;
-          }
-          .editable-row-select {
-            min-height: 34px;
-            max-height: 88px;
-          }
-          .editable-row-file {
-            padding: 0;
-            font-size: 13px;
+          @media (max-width: 640px) {
+            .library-card-flex {
+              flex-direction: column !important;
+            }
+            .library-card-img {
+              margin-bottom: 1rem;
+            }
           }
         `}</style>
       </div>
