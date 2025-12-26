@@ -1,16 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { db, storage } from "../firebase";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import {
-  collection,
-  addDoc,
-  getDocs,
-  doc,
-  deleteDoc,
-  updateDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-
+import { supabase } from "../supabase";
 
 export default function AdminPanel() {
   // Template styles state
@@ -31,51 +20,87 @@ export default function AdminPanel() {
 
   // Inline edit states for library items
   const [editingItemId, setEditingItemId] = useState(null);
-  // For editing in-table, reuse main add form states for simplicity
-  const [currentImageURL, setCurrentImageURL] = useState("");
 
-  // Fetch template styles from Firestore
+  // Fetch template styles from Supabase
   const fetchStyles = async () => {
-    const snapshot = await getDocs(collection(db, "templateStyles"));
-    setStyles(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    const { data, error } = await supabase
+      .from('template_styles')
+      .select('*')
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching styles:', error);
+      return;
+    }
+    setStyles(data || []);
   };
 
-  // Fetch library items from Firestore
+  // Fetch library items from Supabase
   const fetchLibraryItems = async () => {
-    const snapshot = await getDocs(collection(db, "libraryItems"));
-    setLibraryItems(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    const { data, error } = await supabase
+      .from('library_items')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching library items:', error);
+      return;
+    }
+    setLibraryItems(data || []);
   };
 
   useEffect(() => {
     fetchStyles();
     fetchLibraryItems();
-    // eslint-disable-next-line
   }, []);
 
   // Template Styles CRUD
   const handleAddStyle = async () => {
     if (!newStyleName) return;
-    await addDoc(collection(db, "templateStyles"), { name: newStyleName });
+
+    const { error } = await supabase
+      .from('template_styles')
+      .insert({ name: newStyleName });
+
+    if (error) {
+      console.error('Error adding style:', error);
+      alert('Failed to add style');
+      return;
+    }
+
     setNewStyleName("");
     fetchStyles();
   };
 
   const handleDeleteStyle = async (styleId) => {
-    await deleteDoc(doc(db, "templateStyles", styleId));
+    const { error } = await supabase
+      .from('template_styles')
+      .delete()
+      .eq('id', styleId);
+
+    if (error) {
+      console.error('Error deleting style:', error);
+      alert('Failed to delete style');
+      return;
+    }
     fetchStyles();
   };
 
   const handleSaveStyleEdit = async (styleId) => {
-    try {
-      const docRef = doc(db, "templateStyles", styleId);
-      await updateDoc(docRef, { name: editedStyleName });
-      setEditingStyleId(null);
-      setEditedStyleName("");
-      fetchStyles();
-    } catch (error) {
+    const { error } = await supabase
+      .from('template_styles')
+      .update({ name: editedStyleName })
+      .eq('id', styleId);
+
+    if (error) {
       console.error("Failed to update style name:", error);
       alert("Could not save changes.");
+      return;
     }
+
+    setEditingStyleId(null);
+    setEditedStyleName("");
+    fetchStyles();
   };
 
   // Library Items CRUD
@@ -83,7 +108,28 @@ export default function AdminPanel() {
     setFile(e.target.files[0]);
   };
 
-  // Save function for library item (new logic)
+  // Upload file to Supabase Storage
+  const uploadFile = async (file) => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = `library-items/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('library-items')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      throw uploadError;
+    }
+
+    const { data } = supabase.storage
+      .from('library-items')
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
+  };
+
+  // Save function for library item
   const handleSaveLibraryItem = async () => {
     if (
       !file ||
@@ -100,60 +146,35 @@ export default function AdminPanel() {
     setSaving(true);
 
     try {
-      const storageRef = ref(storage, `Library Items/${file.name}`);
+      const imageUrl = await uploadFile(file);
 
-      // Check if file already exists in storage
-      try {
-        await getDownloadURL(storageRef);
-        alert("File already exists in storage.");
-        setSaving(false);
-        return;
-      } catch (e) {
-        // File doesn't exist, proceed to upload
-      }
+      const { error } = await supabase
+        .from('library_items')
+        .insert({
+          image_url: imageUrl,
+          short_description_en: shortDescEN,
+          short_description_es: shortDescES,
+          long_description_en: longDescEN,
+          long_description_es: longDescES,
+          associated_styles: selectedStyleIds,
+        });
 
-      const uploadTask = uploadBytesResumable(storageRef, file);
+      if (error) throw error;
 
-      uploadTask.on(
-        "state_changed",
-        null,
-        (error) => {
-          console.error("Upload error:", error);
-          alert("Upload failed");
-          setSaving(false);
-        },
-        async () => {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+      alert("Library Item saved!");
 
-          await addDoc(collection(db, "libraryItems"), {
-            imageUrl: downloadURL,
-            shortDescription: {
-              en: shortDescEN,
-              es: shortDescES,
-            },
-            longDescription: {
-              en: longDescEN,
-              es: longDescES,
-            },
-            associatedStyles: selectedStyleIds,
-            createdAt: serverTimestamp(),
-          });
-
-          alert("Library Item saved!");
-
-          // Reset form
-          setFile(null);
-          setShortDescEN("");
-          setShortDescES("");
-          setLongDescEN("");
-          setLongDescES("");
-          setSelectedStyleIds([]);
-          setSaving(false);
-        }
-      );
+      // Reset form
+      setFile(null);
+      setShortDescEN("");
+      setShortDescES("");
+      setLongDescEN("");
+      setLongDescES("");
+      setSelectedStyleIds([]);
+      fetchLibraryItems();
     } catch (err) {
       console.error("Save error:", err);
-      alert("Error saving item.");
+      alert("Error saving item: " + err.message);
+    } finally {
       setSaving(false);
     }
   };
@@ -164,34 +185,15 @@ export default function AdminPanel() {
     setSelectedStyleIds(options);
   };
 
-  // Handler for multi-select in edit form
-  const handleEditMultiSelect = (e) => {
-    const options = Array.from(e.target.selectedOptions).map((o) => o.value);
-    setEditSelectedStyleIds(options);
-  };
-
   // When "Edit" is clicked for a library item
   const handleEditItem = (item) => {
     setEditingItemId(item.id);
-    setShortDescEN(item.shortDescription?.en || "");
-    setShortDescES(item.shortDescription?.es || "");
-    setLongDescEN(item.longDescription?.en || "");
-    setLongDescES(item.longDescription?.es || "");
-    setSelectedStyleIds(item.associatedStyles || []);
+    setShortDescEN(item.short_description_en || "");
+    setShortDescES(item.short_description_es || "");
+    setLongDescEN(item.long_description_en || "");
+    setLongDescES(item.long_description_es || "");
+    setSelectedStyleIds(item.associated_styles || []);
     setFile(null);
-    setCurrentImageURL(item.imageUrl || "");
-  };
-
-  // Cancel editing a library item
-  const handleCancelEdit = () => {
-    setEditingItemId(null);
-    setEditFile(null);
-    setEditShortDescEN("");
-    setEditShortDescES("");
-    setEditLongDescEN("");
-    setEditLongDescES("");
-    setEditSelectedStyleIds([]);
-    setEditImageUrl("");
   };
 
   // Update library item (with optional image upload)
@@ -204,33 +206,25 @@ export default function AdminPanel() {
     setSaving(true);
 
     try {
-      const docRef = doc(db, "libraryItems", editingItemId);
-
       const updatedData = {
-        shortDescription: { en: shortDescEN, es: shortDescES },
-        longDescription: { en: longDescEN, es: longDescES },
-        associatedStyles: selectedStyleIds,
+        short_description_en: shortDescEN,
+        short_description_es: shortDescES,
+        long_description_en: longDescEN,
+        long_description_es: longDescES,
+        associated_styles: selectedStyleIds,
       };
 
       if (file) {
-        const storageRef = ref(storage, `Library Items/${file.name}`);
-        const uploadTask = uploadBytesResumable(storageRef, file);
-
-        await new Promise((resolve, reject) => {
-          uploadTask.on(
-            "state_changed",
-            null,
-            reject,
-            async () => {
-              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-              updatedData.imageUrl = downloadURL;
-              resolve();
-            }
-          );
-        });
+        const imageUrl = await uploadFile(file);
+        updatedData.image_url = imageUrl;
       }
 
-      await updateDoc(docRef, updatedData);
+      const { error } = await supabase
+        .from('library_items')
+        .update(updatedData)
+        .eq('id', editingItemId);
+
+      if (error) throw error;
 
       alert("Item updated successfully!");
       setEditingItemId(null);
@@ -243,7 +237,7 @@ export default function AdminPanel() {
       fetchLibraryItems();
     } catch (error) {
       console.error("Update error:", error);
-      alert("Failed to update item.");
+      alert("Failed to update item: " + error.message);
     } finally {
       setSaving(false);
     }
@@ -252,7 +246,17 @@ export default function AdminPanel() {
   // Delete library item
   const handleDeleteItem = async (itemId) => {
     if (!window.confirm("Delete this library item?")) return;
-    await deleteDoc(doc(db, "libraryItems", itemId));
+
+    const { error } = await supabase
+      .from('library_items')
+      .delete()
+      .eq('id', itemId);
+
+    if (error) {
+      console.error('Error deleting item:', error);
+      alert('Failed to delete item');
+      return;
+    }
     fetchLibraryItems();
   };
 
@@ -436,9 +440,9 @@ export default function AdminPanel() {
               <div className="flex-shrink-0 flex items-center justify-center w-[100px] min-w-[100px]">
                 {editingItemId === item.id ? (
                   <div className="flex flex-col items-center w-full">
-                    {item.imageUrl && (
+                    {item.image_url && (
                       <img
-                        src={item.imageUrl}
+                        src={item.image_url}
                         alt="Current"
                         className="rounded border border-gray-200 object-cover"
                         style={{ width: 60, height: 60 }}
@@ -452,7 +456,7 @@ export default function AdminPanel() {
                   </div>
                 ) : (
                   <img
-                    src={item.imageUrl}
+                    src={item.image_url}
                     alt="Library"
                     className="rounded border border-gray-200 object-cover"
                     style={{ width: 60, height: 60 }}
@@ -473,7 +477,7 @@ export default function AdminPanel() {
                         className="w-full border p-1 rounded mb-1 text-sm"
                       />
                     ) : (
-                      <div className="text-gray-900 text-sm">{item.shortDescription?.en || ""}</div>
+                      <div className="text-gray-900 text-sm">{item.short_description_en || ""}</div>
                     )}
                     <span className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mt-2 mb-0.5">ES</span>
                     {editingItemId === item.id ? (
@@ -484,7 +488,7 @@ export default function AdminPanel() {
                         className="w-full border p-1 rounded text-sm"
                       />
                     ) : (
-                      <div className="text-gray-900 text-sm">{item.shortDescription?.es || ""}</div>
+                      <div className="text-gray-900 text-sm">{item.short_description_es || ""}</div>
                     )}
                   </div>
                   {/* Long Description */}
@@ -499,7 +503,7 @@ export default function AdminPanel() {
                         rows={2}
                       />
                     ) : (
-                      <div className="text-gray-700 text-sm whitespace-pre-line">{item.longDescription?.en || ""}</div>
+                      <div className="text-gray-700 text-sm whitespace-pre-line">{item.long_description_en || ""}</div>
                     )}
                     <span className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mt-2 mb-0.5">ES</span>
                     {editingItemId === item.id ? (
@@ -511,7 +515,7 @@ export default function AdminPanel() {
                         rows={2}
                       />
                     ) : (
-                      <div className="text-gray-700 text-sm whitespace-pre-line">{item.longDescription?.es || ""}</div>
+                      <div className="text-gray-700 text-sm whitespace-pre-line">{item.long_description_es || ""}</div>
                     )}
                   </div>
                 </div>
@@ -535,7 +539,7 @@ export default function AdminPanel() {
                         ))}
                       </select>
                     ) : (
-                      (item.associatedStyles || [])
+                      (item.associated_styles || [])
                         .map(id => styles.find(s => s.id === id)?.name || id)
                         .join(", ")
                     )}

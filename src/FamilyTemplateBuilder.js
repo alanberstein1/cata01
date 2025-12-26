@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { db } from "./firebase";
-import { collection, getDocs, addDoc } from "firebase/firestore";
+import { supabase } from "./supabase";
 
 const FamilyTemplateBuilder = () => {
   const [step, setStep] = useState(1);
@@ -11,9 +10,15 @@ const FamilyTemplateBuilder = () => {
 
   useEffect(() => {
     const fetchStyles = async () => {
-      const snapshot = await getDocs(collection(db, "templateStyles"));
-      const styles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setAvailableStyles(styles);
+      const { data, error } = await supabase
+        .from('template_styles')
+        .select('*');
+
+      if (error) {
+        console.error('Error fetching styles:', error);
+        return;
+      }
+      setAvailableStyles(data || []);
     };
     fetchStyles();
   }, []);
@@ -26,11 +31,14 @@ const FamilyTemplateBuilder = () => {
 
   const saveTemplate = async () => {
     try {
-      await addDoc(collection(db, "family_templates"), {
-        createdAt: new Date().toISOString(),
-        style: selectedStyle?.id,
-        members,
-      });
+      const { error } = await supabase
+        .from('family_templates')
+        .insert({
+          style_id: selectedStyle?.id,
+          members: members,
+        });
+
+      if (error) throw error;
       alert("Family template saved!");
     } catch (error) {
       console.error("Error saving template:", error);
